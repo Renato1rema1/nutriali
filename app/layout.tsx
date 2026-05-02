@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter, Space_Grotesk, Geist } from 'next/font/google';
 import './globals.css';
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 const space = Space_Grotesk({ subsets: ['latin'], variable: '--font-display' });
 
 export const metadata: Metadata = {
@@ -16,9 +18,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${space.variable}`}>
+    <html lang="pt-BR" className={cn(space.variable, "font-sans", geist.variable)}>
       <body className="font-sans antialiased text-slate-800 bg-slate-50 min-h-screen flex flex-col" suppressHydrationWarning>
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

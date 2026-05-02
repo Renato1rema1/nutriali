@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Apple, Bot, Loader2, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
 export default function DietasIAPage() {
   const [goal, setGoal] = useState("");
@@ -21,20 +24,26 @@ export default function DietasIAPage() {
     setLoading(true);
     setResult(null);
 
+    const prompt = `Atue como um nutricionista virtual altamente qualificado. 
+Crie um plano alimentar diário (1 dia de exemplo) focado no objetivo: ${goal}.
+Lembre-se das seguintes preferências ou restrições do paciente: ${preferences || "Nenhuma especificada"}.
+
+O formato deve ser em Markdown bem estruturado, contendo:
+- Título do Plano e Resumo dos Objetivos
+- Refeições: Café da manhã, Lanche da manhã, Almoço, Lanche da tarde, Jantar e Ceia.
+- Para cada refeição, liste os ingredientes/quantidades aproximadas e uma dica de substituição.
+- Uma seção final de orientações de hidratação.
+
+Limite sua resposta ao essencial e seja prático e encorajador.`;
+
     try {
-      const response = await fetch("/api/generate-diet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goal, preferences }),
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: prompt,
       });
 
-      if (!response.ok) {
-        throw new Error("Erro ao gerar dieta");
-      }
-
-      const data = await response.json();
-      setResult(data.text);
-    } catch (error) {
+      setResult(response.text);
+    } catch (error: any) {
       console.error(error);
       setResult("Desculpe, ocorreu um erro ao gerar a sua dieta. Tente novamente mais tarde.");
     } finally {
