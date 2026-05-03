@@ -4,14 +4,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Check, ArrowLeft, Apple } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PlansPage() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  
+  const backLink = user ? "/dashboard" : "/";
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-10">
-        <Link href="/" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
+        <Link href={backLink} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
           <ArrowLeft className="h-4 w-4" />
           <span className="text-sm font-medium">{t('nav.back')}</span>
         </Link>

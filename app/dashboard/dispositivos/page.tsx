@@ -93,9 +93,9 @@ export default function WearablesPage() {
             <ol className="list-decimal pl-5 space-y-2">
               <li>Abra o aplicativo <strong>Saúde (Health)</strong> no seu iPhone.</li>
               <li>Toque na sua foto de perfil no canto superior direito.</li>
-              <li>Na seção "Privacidade", toque em <strong>Apps e Serviços</strong>.</li>
+              <li>Na seção &quot;Privacidade&quot;, toque em <strong>Apps e Serviços</strong>.</li>
               <li>Selecione <strong>Nutrilia</strong> na lista.</li>
-              <li>Ative a opção <strong>"Ativar Tudo"</strong> para permitir a leitura de Passos, Frequência Cardíaca e Energia Ativa.</li>
+              <li>Ative a opção <strong>&quot;Ativar Tudo&quot;</strong> para permitir a leitura de Passos, Frequência Cardíaca e Energia Ativa.</li>
             </ol>
             <div className="pt-4 flex justify-end">
               <Button onClick={() => {

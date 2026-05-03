@@ -1,15 +1,30 @@
 "use client";
 
+import { useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { Camera, User as UserIcon } from "lucide-react";
 
 export default function PerfilPage() {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   if (!user) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        updateProfile({ profilePicture: base64String });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -20,6 +35,37 @@ export default function PerfilPage() {
 
       <Card>
         <CardHeader>
+          <div className="flex sm:flex-row flex-col sm:items-center gap-6 pb-4 mb-4 border-b border-slate-100">
+            <div className="relative isolate flex-shrink-0 mx-auto sm:mx-0">
+              <div 
+                className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white shadow-md overflow-hidden flex items-center justify-center cursor-pointer group"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {user.profilePicture ? (
+                  <img src={user.profilePicture} alt="Foto de perfil" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-12 h-12 text-slate-400 group-hover:text-slate-500 transition-colors" />
+                )}
+                
+                {/* Overlay on hover */}
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                ref={fileInputRef}
+                onChange={handleFileChange}
+              />
+            </div>
+            <div className="text-center sm:text-left">
+              <CardTitle className="text-xl">{user.name}</CardTitle>
+              <CardDescription className="mt-1">Clique na imagem para alterar sua foto de perfil</CardDescription>
+            </div>
+          </div>
+
           <CardTitle>Informações Básicas</CardTitle>
           <CardDescription>Atualize seus dados para a IA ser mais precisa</CardDescription>
         </CardHeader>

@@ -141,8 +141,12 @@ export default function DashboardLayout({
               <p className="text-sm font-bold leading-none mb-1">{user?.name || 'João Silva'}</p>
               <p className="text-[10px] text-slate-500">{t('header.plan')}</p>
             </div>
-            <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 shrink-0">
-              {initials}
+            <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 shrink-0 overflow-hidden">
+              {user?.profilePicture ? (
+                <img src={user?.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
           </div>
         </header>

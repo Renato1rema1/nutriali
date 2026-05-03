@@ -11,6 +11,7 @@ interface User {
   isAppleWatchConnected?: boolean;
   recordedMeals?: string[];
   savedPlans?: any[];
+  profilePicture?: string;
 }
 
 interface AuthContextType {
@@ -24,6 +25,7 @@ interface AuthContextType {
   toggleMeal: (mealId: string) => void;
   savePlan: (plan: any) => void;
   removePlan: (planId: string) => void;
+  updateProfile: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -165,6 +167,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateProfile = (data: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...data };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+    }
+  };
+
   // Basic protection: if we go to dashboard without login
   useEffect(() => {
     if (isLoaded) {
@@ -187,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, pathname, isLoaded, router]);
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, completeOnboarding, connectAppleWatch, disconnectAppleWatch, toggleMeal, savePlan, removePlan }}>
+    <AuthContext.Provider value={{ user, login, register, logout, completeOnboarding, connectAppleWatch, disconnectAppleWatch, toggleMeal, savePlan, removePlan, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -10,6 +10,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
+const MEALS = [
+  { id: "breakfast", label: "Café da Manhã", time: "08:00", description: "Ovos mexidos com mamão e aveia." },
+  { id: "snack1", label: "Lanche da Manhã", time: "10:30", description: "Fruta (Maçã ou Pera)" },
+  { id: "lunch", label: "Almoço", time: "13:00", description: "Arroz integral, feijão, frango grelhado e salada." },
+  { id: "snack2", label: "Lanche da Tarde", time: "16:00", description: "Iogurte natural com castanhas." },
+  { id: "dinner", label: "Jantar", time: "19:30", description: "Sopa de legumes com carne magra." }
+];
+
 export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { t } = useLanguage();
@@ -27,6 +35,9 @@ export default function DashboardPage() {
   ];
 
   const isWatchConnected = user?.isAppleWatchConnected;
+
+  const recordedMeals = user?.recordedMeals || [];
+  const nextMeal = MEALS.find(meal => !recordedMeals.includes(meal.id));
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
@@ -128,16 +139,23 @@ export default function DashboardPage() {
           <div className="grid sm:grid-cols-2 gap-6">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">{t('dash.next.title')}</CardTitle>
+                <CardTitle className="text-lg">{t('dash.next.title') || "Próxima Refeição"}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium text-slate-900">{t('dash.next.meal')}</span>
-                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">16:00</span>
+                {nextMeal ? (
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-medium text-slate-900">{nextMeal.label}</span>
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">{nextMeal.time}</span>
+                    </div>
+                    <p className="text-sm text-slate-600">{nextMeal.description}</p>
                   </div>
-                  <p className="text-sm text-slate-600">{t('dash.next.desc')}</p>
-                </div>
+                ) : (
+                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100 text-center">
+                    <span className="font-medium text-emerald-900">Todas as refeições concluídas!</span>
+                    <p className="text-sm text-emerald-700 mt-1">Parabéns pelo foco hoje.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
