@@ -7,31 +7,48 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-const weightData = [
-  { name: 'Sem 1', peso: 80.5 },
-  { name: 'Sem 2', peso: 79.8 },
-  { name: 'Sem 3', peso: 79.0 },
-  { name: 'Sem 4', peso: 78.4 },
-  { name: 'Sem 5', peso: 77.9 },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const router = useRouter();
+  const firstName = user?.name ? user.name.split(' ')[0] : 'João';
+
+  const userWeight = user?.preferences?.weight ? Number(user.preferences.weight) : 77.9;
+  const currentWeightData = [
+    { name: 'Sem 1', peso: Math.round((userWeight + 2.6) * 10) / 10 },
+    { name: 'Sem 2', peso: Math.round((userWeight + 1.9) * 10) / 10 },
+    { name: 'Sem 3', peso: Math.round((userWeight + 1.1) * 10) / 10 },
+    { name: 'Sem 4', peso: Math.round((userWeight + 0.5) * 10) / 10 },
+    { name: 'Atual', peso: userWeight },
+  ];
+
+  const isWatchConnected = user?.isAppleWatchConnected;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div>
-        <h1 className="text-2xl font-bold font-display text-slate-900 tracking-tight">{t('dash.title')}</h1>
+        <h1 className="text-2xl font-bold font-display text-slate-900 tracking-tight">{t('dash.title').replace('João', firstName)}</h1>
         <p className="text-slate-500">{t('dash.subtitle')}</p>
+        
+        {!isWatchConnected && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-800 text-sm">
+            <strong className="block mb-1">Como funciona a Visão Geral?</strong>
+            Os dados de calorias, água e passos são sincronizados automaticamente a partir do seu <strong>Apple Watch / Apple Health</strong>. 
+            Como seu dispositivo ainda não está conectado, eles aparecem zerados. 
+            Vá na aba <strong>Dispositivos</strong> para conectar seu relógio e começar a sincronizar as informações do seu dia a dia automaticamente!
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass-card p-4 rounded-2xl shadow-sm border-0 border-l-4 border-l-orange-500 bg-white">
           <div>
             <p className="text-slate-500 text-xs font-semibold mb-1 uppercase tracking-wider">{t('dash.kcal')}</p>
-            <h3 className="text-2xl font-bold font-display text-slate-900">1.850</h3>
+            <h3 className="text-2xl font-bold font-display text-slate-900">{isWatchConnected ? "1.850" : "0"}</h3>
             <p className="text-xs text-orange-600 mt-1">Meta: 2.200</p>
           </div>
         </div>
@@ -39,9 +56,9 @@ export default function DashboardPage() {
         <div className="glass-card p-4 rounded-2xl shadow-sm border-0 border-l-4 border-l-blue-500 bg-white">
           <div>
             <p className="text-slate-500 text-xs font-semibold mb-1 uppercase tracking-wider">{t('dash.water')}</p>
-            <h3 className="text-2xl font-bold font-display text-slate-900">2.1L</h3>
+            <h3 className="text-2xl font-bold font-display text-slate-900">{isWatchConnected ? "2.1L" : "0L"}</h3>
             <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2">
-              <div className="bg-blue-500 h-full rounded-full" style={{ width: '70%' }}></div>
+              <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: isWatchConnected ? '70%' : '0%' }}></div>
             </div>
           </div>
         </div>
@@ -49,16 +66,37 @@ export default function DashboardPage() {
         <div className="glass-card p-4 rounded-2xl shadow-sm border-0 border-l-4 border-l-emerald-500 bg-white">
           <div>
             <p className="text-slate-500 text-xs font-semibold mb-1 uppercase tracking-wider">{t('dash.steps')}</p>
-            <h3 className="text-2xl font-bold font-display text-slate-900">6.540</h3>
-            <p className="text-xs text-emerald-600 mt-1">+12%</p>
+            <h3 className="text-2xl font-bold font-display text-slate-900">{isWatchConnected ? "6.540" : "0"}</h3>
+            <p className={`text-xs mt-1 ${isWatchConnected ? 'text-emerald-600' : 'text-slate-400'}`}>
+              {isWatchConnected ? "+12%" : "Sem dados"}
+            </p>
           </div>
         </div>
 
-        <div className="glass-card p-4 rounded-2xl shadow-sm border-0 border-l-4 border-l-purple-500 bg-white">
+        <div 
+          onClick={() => router.push('/dashboard/refeicoes')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              router.push('/dashboard/refeicoes');
+            }
+          }}
+          className="glass-card p-4 rounded-2xl shadow-sm border-0 border-l-4 border-l-purple-500 bg-white cursor-pointer hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+        >
           <div>
             <p className="text-slate-500 text-xs font-semibold mb-1 uppercase tracking-wider">{t('dash.meals')}</p>
-            <h3 className="text-2xl font-bold font-display text-slate-900">3 / 5</h3>
-            <p className="text-xs text-slate-500 mt-1 uppercase">Pendente: Lanche</p>
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-bold font-display text-slate-900">
+                {user?.recordedMeals ? user.recordedMeals.length : 0} / 5
+              </h3>
+              <div className="bg-purple-100 text-purple-700 p-1.5 rounded-lg flex items-center justify-center">
+                <Utensils className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mt-1 uppercase">
+              {user?.recordedMeals?.length === 5 ? "Tudo concluído" : "Bora registrar!"}
+            </p>
           </div>
         </div>
       </div>
@@ -73,7 +111,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={weightData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <LineChart data={currentWeightData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                     <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />

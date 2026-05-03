@@ -20,7 +20,7 @@ export default function Home() {
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-500">
           <Link href="#funcionalidades" className="hover:text-emerald-600 transition-colors">{t('nav.features')}</Link>
           <Link href="/cadastro-nutricionista" className="hover:text-emerald-600 transition-colors">{t('nav.professional')}</Link>
-          <Link href="/dashboard/premium" className="hover:text-emerald-600 transition-colors">{t('nav.plans')}</Link>
+          <Link href="/plans" className="hover:text-emerald-600 transition-colors">{t('nav.plans')}</Link>
         </nav>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">

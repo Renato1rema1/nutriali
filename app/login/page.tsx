@@ -7,14 +7,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Apple, EyeOff, Eye, Mail, Lock, User } from "lucide-react";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const isRegister = searchParams.get("tab") === "register";
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const { t } = useLanguage();
+  const { login, register } = useAuth();
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalEmail = email || "usuario@exemplo.com";
+    if (isRegister) {
+      const finalName = name || "Novo Usuário";
+      register(finalName, finalEmail);
+    } else {
+      login("Usuário Retornando", finalEmail);
+    }
+  };
 
   return (
     <div className="w-full max-w-md">
@@ -55,13 +70,13 @@ function LoginForm() {
             </div>
           </div>
 
-          <div className="space-y-4 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             {isRegister && (
               <div className="space-y-2">
                 <Label htmlFor="name">{t('login.name')}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-                  <Input id="name" placeholder={t('login.name.placeholder')} className="pl-10 h-11 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" />
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('login.name.placeholder')} className="pl-10 h-11 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" required />
                 </div>
               </div>
             )}
@@ -69,7 +84,7 @@ function LoginForm() {
               <Label htmlFor="email">{t('login.email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-                <Input id="email" type="email" placeholder={t('login.email.placeholder')} className="pl-10 h-11 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" />
+                <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder={t('login.email.placeholder')} className="pl-10 h-11 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" required />
               </div>
             </div>
             <div className="space-y-2">
@@ -87,6 +102,7 @@ function LoginForm() {
                   id="password" 
                   type={showPassword ? "text" : "password"}
                   className="pl-10 pr-10 h-11 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" 
+                  required
                 />
                 <button
                   type="button"
@@ -97,13 +113,11 @@ function LoginForm() {
                 </button>
               </div>
             </div>
-          </div>
 
-          <Link href="/dashboard" className="block pt-2">
-            <Button className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-200 font-semibold border-0 text-base">
+            <Button type="submit" className="w-full h-11 mt-6 bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-200 font-semibold border-0 text-base">
               {isRegister ? t('login.btn.register') : t('login.btn.login')}
             </Button>
-          </Link>
+          </form>
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center text-sm text-slate-600 gap-2 pb-6">
           {isRegister ? (

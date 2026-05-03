@@ -11,11 +11,14 @@ import {
   User, 
   LogOut,
   Menu,
-  X
+  X,
+  Utensils,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function DashboardLayout({
   children,
@@ -25,14 +28,20 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
+  const { user, logout } = useAuth();
 
   const sidebarLinks = [
     { href: "/dashboard", icon: LayoutDashboard, label: t('sidebar.overview') },
+    { href: "/dashboard/refeicoes", icon: Utensils, label: "Refeições" },
     { href: "/dashboard/dietas", icon: Apple, label: t('sidebar.diets') },
+    { href: "/dashboard/chat", icon: Bot, label: "Chat IA" },
     { href: "/dashboard/atendimento", icon: MessageSquare, label: t('sidebar.professionals') },
     { href: "/dashboard/dispositivos", icon: Watch, label: t('sidebar.devices') },
     { href: "/dashboard/perfil", icon: User, label: t('sidebar.profile') },
   ];
+
+  const firstName = user?.name ? user.name.split(' ')[0] : 'João';
+  const initials = user?.name ? user.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() : 'JS';
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -92,19 +101,19 @@ export default function DashboardLayout({
               <span className="text-[10px] font-bold premium-pill px-2 py-0.5 rounded uppercase">Premium</span>
             </div>
             <p className="text-sm text-slate-400 mb-3">{t('sidebar.upgrade.desc')}</p>
-            <Link href="/dashboard/premium">
+            <Link href="/plans">
               <Button className="w-full bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg text-sm font-semibold transition-colors border-0">
                 Upgrade
               </Button>
             </Link>
           </div>
-          <Link 
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 mt-2 text-sm font-medium text-slate-500 hover:text-red-600 transition-colors"
+          <button 
+            onClick={logout}
+            className="flex items-center gap-3 w-full px-3 py-2 mt-2 text-sm font-medium text-slate-500 hover:text-red-600 transition-colors"
           >
             <LogOut className="h-4 w-4" />
             {t('sidebar.logout')}
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -118,20 +127,22 @@ export default function DashboardLayout({
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex items-center space-x-4 hidden md:flex">
-            <h1 className="text-xl font-bold text-slate-800">{t('header.welcome')}</h1>
-            <div className="flex items-center text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-2"></div>
-              {t('header.connected')}
-            </div>
+            <h1 className="text-xl font-bold text-slate-800">{t('header.welcome').replace('João', firstName)}</h1>
+            {user?.isAppleWatchConnected && (
+              <div className="flex items-center text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-2"></div>
+                {t('header.connected')}
+              </div>
+            )}
           </div>
           <div className="flex-1 md:hidden" />
           <div className="flex items-center gap-6">
             <div className="text-right hidden sm:block leading-none">
-              <p className="text-sm font-bold leading-none mb-1">João Silva</p>
+              <p className="text-sm font-bold leading-none mb-1">{user?.name || 'João Silva'}</p>
               <p className="text-[10px] text-slate-500">{t('header.plan')}</p>
             </div>
             <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 shrink-0">
-              JS
+              {initials}
             </div>
           </div>
         </header>

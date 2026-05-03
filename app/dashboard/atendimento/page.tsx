@@ -69,7 +69,12 @@ export default function AtendimentoPage() {
                       <span className="text-[10px] uppercase tracking-wider font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Intolerâncias</span>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-emerald-600">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="hidden sm:inline-flex text-emerald-600"
+                    onClick={() => window.location.href = `/dashboard/atendimento/${i}`}
+                  >
                     Ver Perfil
                   </Button>
                 </CardContent>
