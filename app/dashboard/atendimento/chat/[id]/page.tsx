@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,16 @@ import {
   Image as ImageIcon,
   Check,
   CheckCheck,
-  Clock
+  Clock,
+  Video,
+  Phone,
+  Mic,
+  MicOff,
+  VideoOff,
+  XCircle,
+  Maximize2
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 
 interface Message {
   id: string;
@@ -51,8 +59,45 @@ export default function ProfessionalChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isVideoCallActive, setIsVideoCallActive] = useState(false);
+  const [isMicOn, setIsMicOn] = useState(true);
+  const [isCamOn, setIsCamOn] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("video") === "true") {
+      setIsVideoCallActive(true);
+    }
+  }, [searchParams]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Video stream logic
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    
+    if (isVideoCallActive && isCamOn) {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(s => {
+          stream = s;
+          if (videoRef.current) {
+            videoRef.current.srcObject = s;
+          }
+        })
+        .catch(err => {
+          console.error("Error accessing camera:", err);
+        });
+    }
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isVideoCallActive, isCamOn]);
 
   // Load message history from localStorage
   useEffect(() => {
@@ -202,6 +247,17 @@ export default function ProfessionalChatPage() {
           </div>
         </div>
         <div className="flex gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-slate-400 hover:text-emerald-600"
+            onClick={() => setIsVideoCallActive(true)}
+          >
+            <Video className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600">
+            <Phone className="h-5 w-5" />
+          </Button>
           <Button variant="ghost" size="icon" className="text-slate-400">
             <MoreVertical className="h-5 w-5" />
           </Button>
@@ -311,6 +367,165 @@ export default function ProfessionalChatPage() {
           </p>
         </div>
       </Card>
+
+      {/* Video Call Overlay */}
+      <AnimatePresence>
+        {isVideoCallActive && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1, 
+              y: 0,
+              ...(isMinimized ? {
+                width: 300,
+                height: 200,
+                bottom: 20,
+                right: 20,
+                top: 'auto',
+                left: 'auto',
+                position: 'fixed'
+              } : {
+                width: '100%',
+                height: '100%',
+                top: 0,
+                left: 0,
+                position: 'fixed'
+              })
+            }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className={`z-50 bg-slate-900 overflow-hidden shadow-2xl transition-all duration-300 ${
+              isMinimized ? 'rounded-2xl border-2 border-emerald-500' : 'rounded-none'
+            }`}
+          >
+            {/* Background Video (Professional - Dummy) */}
+            {!isMinimized && (
+              <div className="absolute inset-0 z-0">
+                <Image 
+                  src={`https://picsum.photos/seed/doc${id}/1280/720`} 
+                  alt="Professional" 
+                  fill
+                  className="object-cover opacity-60 blur-sm"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-slate-900/50"></div>
+              </div>
+            )}
+
+            {/* Content Container */}
+            <div className="relative z-10 h-full flex flex-col p-6">
+              {/* Header */}
+              <div className="flex justify-between items-center text-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20">
+                    <Image 
+                      src={`https://picsum.photos/seed/doc${id}/100`} 
+                      alt="Professional" 
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  {!isMinimized && (
+                    <div>
+                      <h3 className="font-bold">{professional.name}</h3>
+                      <p className="text-xs text-emerald-400">Em consulta • 04:12</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-white/70 hover:text-white hover:bg-white/10"
+                    onClick={() => setIsMinimized(!isMinimized)}
+                  >
+                    {isMinimized ? <Maximize2 className="h-5 w-5" /> : <motion.div animate={{ rotate: 180 }}><ArrowLeft className="h-5 w-5" /></motion.div>}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Main Video Stage */}
+              {!isMinimized && (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                   <div className="relative w-full max-w-4xl aspect-video rounded-3xl overflow-hidden bg-slate-800 shadow-2xl border border-white/10">
+                      <Image 
+                        src={`https://picsum.photos/seed/doc${id}/800/450`} 
+                        alt="Professional stream" 
+                        fill
+                        className="object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      {/* Self View (Pip) */}
+                      <div className="absolute bottom-6 right-6 w-48 aspect-video rounded-xl overflow-hidden border-2 border-white/20 bg-slate-900 shadow-xl">
+                        {isCamOn ? (
+                          <video 
+                            ref={videoRef} 
+                            autoPlay 
+                            muted 
+                            playsInline 
+                            className="w-full h-full object-cover scale-x-[-1]"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-800">
+                             <UserIcon className="h-10 w-10 text-slate-600" />
+                          </div>
+                        )}
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {isMinimized && (
+                <div className="flex-1 flex items-center justify-center relative">
+                   <div className="absolute inset-0">
+                      <Image 
+                        src={`https://picsum.photos/seed/doc${id}/400/250`} 
+                        alt="Professional" 
+                        fill
+                        className="object-cover opacity-40"
+                        referrerPolicy="no-referrer"
+                      />
+                   </div>
+                   <div className="z-10 text-white text-center">
+                      <p className="text-xs font-bold">{professional.name}</p>
+                      <p className="text-[10px] text-emerald-400">Em consulta</p>
+                   </div>
+                </div>
+              )}
+
+              {/* Controls */}
+              <div className={`mt-auto flex items-center justify-center gap-4 ${isMinimized ? 'scale-75 origin-bottom' : ''}`}>
+                <Button 
+                  size="icon" 
+                  variant={isMicOn ? "secondary" : "destructive"} 
+                  className="rounded-full w-14 h-14"
+                  onClick={() => setIsMicOn(!isMicOn)}
+                >
+                  {isMicOn ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant="destructive" 
+                  className="rounded-full w-16 h-16 shadow-lg shadow-red-900/50"
+                  onClick={() => setIsVideoCallActive(false)}
+                >
+                  <XCircle className="h-8 w-8" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant={isCamOn ? "secondary" : "destructive"} 
+                  className="rounded-full w-14 h-14"
+                  onClick={() => setIsCamOn(!isCamOn)}
+                >
+                  {isCamOn ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

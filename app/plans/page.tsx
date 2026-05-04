@@ -15,17 +15,17 @@ export default function PlansPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-10">
-        <Link href={backLink} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
-          <ArrowLeft className="h-4 w-4" />
+        <Link href={backLink} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors" aria-label="Voltar">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           <span className="text-sm font-medium">{t('nav.back')}</span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" aria-hidden="true">
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
             <Apple className="h-5 w-5 text-white" />
           </div>
           <span className="font-display font-bold text-xl tracking-tight text-slate-800">Nutrilia</span>
         </div>
-        <div className="w-16"></div> {/* Spacer for centering */}
+        <div className="w-16" aria-hidden="true"></div> {/* Spacer for centering */}
       </header>
 
       <main className="flex-1 py-16 px-6">

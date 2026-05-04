@@ -9,9 +9,16 @@ interface User {
   isOnboarded: boolean;
   preferences?: any;
   isAppleWatchConnected?: boolean;
+  isGoogleFitConnected?: boolean;
+  isGarminConnected?: boolean;
   recordedMeals?: string[];
   savedPlans?: any[];
   profilePicture?: string;
+  mealReminders?: {
+    id: string;
+    time: string;
+    enabled: boolean;
+  }[];
 }
 
 interface AuthContextType {
@@ -22,6 +29,10 @@ interface AuthContextType {
   completeOnboarding: (preferences: any) => void;
   connectAppleWatch: () => void;
   disconnectAppleWatch: () => void;
+  connectGoogleFit: () => void;
+  disconnectGoogleFit: () => void;
+  connectGarmin: () => void;
+  disconnectGarmin: () => void;
   toggleMeal: (mealId: string) => void;
   savePlan: (plan: any) => void;
   removePlan: (planId: string) => void;
@@ -37,11 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("nutrilia_user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    if (typeof window !== "undefined") {
+      const savedUser = localStorage.getItem("nutrilia_user");
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+      setIsLoaded(true);
     }
-    setIsLoaded(true);
   }, []);
 
   const login = (name: string, email: string) => {
@@ -125,6 +138,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const connectGoogleFit = () => {
+    if (user) {
+      const updatedUser = { ...user, isGoogleFitConnected: true };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+    }
+  };
+
+  const disconnectGoogleFit = () => {
+    if (user) {
+      const updatedUser = { ...user, isGoogleFitConnected: false };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+    }
+  };
+
+  const connectGarmin = () => {
+    if (user) {
+      const updatedUser = { ...user, isGarminConnected: true };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+    }
+  };
+
+  const disconnectGarmin = () => {
+    if (user) {
+      const updatedUser = { ...user, isGarminConnected: false };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+    }
+  };
+
   const toggleMeal = (mealId: string) => {
     if (user) {
       const currentMeals = user.recordedMeals || [];
@@ -133,7 +190,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? currentMeals.filter(m => m !== mealId) 
         : [...currentMeals, mealId];
       
-      const updatedUser = { ...user, recordedMeals: newMeals };
+      // If we are marking a meal as recorded, let's also disable its reminder
+      let updatedReminders = user.mealReminders;
+      if (!isRecorded && user.mealReminders) {
+        updatedReminders = user.mealReminders.map(reminder => 
+          reminder.id === mealId ? { ...reminder, enabled: false } : reminder
+        );
+      }
+      
+      const updatedUser = { ...user, recordedMeals: newMeals, mealReminders: updatedReminders };
       setUser(updatedUser);
       localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
       const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
@@ -200,7 +265,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, pathname, isLoaded, router]);
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, completeOnboarding, connectAppleWatch, disconnectAppleWatch, toggleMeal, savePlan, removePlan, updateProfile }}>
+    <AuthContext.Provider value={{ 
+      user, login, register, logout, completeOnboarding, 
+      connectAppleWatch, disconnectAppleWatch, 
+      connectGoogleFit, disconnectGoogleFit,
+      connectGarmin, disconnectGarmin,
+      toggleMeal, savePlan, removePlan, updateProfile 
+    }}>
       {children}
     </AuthContext.Provider>
   );

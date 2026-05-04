@@ -17,8 +17,13 @@ export default function AtendimentoPage() {
           <p className="text-slate-500">Encontre o especialista ideal para o seu perfil ou converse com o seu nutricionista.</p>
         </div>
         <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input className="pl-9" placeholder="Buscar especialidade ou nome..." />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" aria-hidden="true" />
+          <label htmlFor="pro-search" className="sr-only">Buscar profissionais</label>
+          <Input 
+            id="pro-search"
+            className="pl-9" 
+            placeholder="Buscar especialidade ou nome..." 
+          />
         </div>
       </div>
 
@@ -27,7 +32,7 @@ export default function AtendimentoPage() {
           <h2 className="text-lg font-bold">Seu Acompanhamento Atual</h2>
           <Card className="border-emerald-200 shadow-emerald-100/50">
             <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
-              <div className="h-24 w-24 rounded-full overflow-hidden bg-slate-100 shrink-0">
+              <div className="h-24 w-24 rounded-full overflow-hidden bg-slate-100 shrink-0 relative">
                 <img src="https://picsum.photos/seed/doc1/200" alt="Dra. Mariana S." className="h-full w-full object-cover" />
               </div>
               <div className="flex-1 space-y-3">
@@ -40,13 +45,19 @@ export default function AtendimentoPage() {
                   <Button 
                     className="gap-2"
                     onClick={() => router.push('/dashboard/atendimento/chat/1')}
+                    aria-label="Enviar mensagem para Dra. Mariana Silva"
                   >
-                    <MessageSquarePlus className="h-4 w-4" />
-                    Enviar Mensagem
+                    <MessageSquarePlus className="h-4 w-4" aria-hidden="true" />
+                    Chat Online
                   </Button>
-                  <Button variant="outline" className="gap-2">
-                    <Video className="h-4 w-4" />
-                    Videoconferência
+                  <Button 
+                    variant="outline" 
+                    className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                    onClick={() => router.push('/dashboard/atendimento/chat/1?video=true')}
+                    aria-label="Iniciar videoconferência com Dra. Mariana Silva"
+                  >
+                    <Video className="h-4 w-4" aria-hidden="true" />
+                    Vídeo Consulta
                   </Button>
                 </div>
               </div>
@@ -54,18 +65,18 @@ export default function AtendimentoPage() {
           </Card>
 
           <h2 className="text-lg font-bold pt-4">Recomendados para você</h2>
-          <div className="space-y-4">
+          <div className="space-y-4" role="list">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="hover:border-slate-300 transition-colors">
+              <Card key={i} className="hover:border-slate-300 transition-colors" role="listitem">
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-full overflow-hidden bg-slate-100 shrink-0">
-                    <img src={`https://picsum.photos/seed/doc${i}/100`} alt="Nutricionista" className="h-full w-full object-cover" />
+                  <div className="h-16 w-16 rounded-full overflow-hidden bg-slate-100 shrink-0 relative">
+                    <img src={`https://picsum.photos/seed/doc${i}/100`} alt={`Dr. Especialista ${i}`} className="h-full w-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <h4 className="font-bold truncate">Dr. Especialista {i}</h4>
-                      <div className="flex items-center gap-1 text-amber-500 text-sm font-medium">
-                        <Star className="h-3 w-3 fill-amber-500" />
+                      <div className="flex items-center gap-1 text-amber-500 text-sm font-medium" aria-label="Avaliação: 4.9 de 5 estrelas">
+                        <Star className="h-3 w-3 fill-amber-500" aria-hidden="true" />
                         4.9
                       </div>
                     </div>
@@ -80,6 +91,7 @@ export default function AtendimentoPage() {
                     size="sm" 
                     className="hidden sm:inline-flex text-emerald-600"
                     onClick={() => router.push(`/dashboard/atendimento/${i}`)}
+                    aria-label={`Ver Perfil de Dr. Especialista ${i}`}
                   >
                     Ver Perfil
                   </Button>

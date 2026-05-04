@@ -13,12 +13,14 @@ import {
   Menu,
   X,
   Utensils,
-  Bot
+  Bot,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationManager } from "@/components/NotificationManager";
 
 export default function DashboardLayout({
   children,
@@ -36,6 +38,7 @@ export default function DashboardLayout({
     { href: "/dashboard/dietas", icon: Apple, label: t('sidebar.diets') },
     { href: "/dashboard/chat", icon: Bot, label: "Chat IA" },
     { href: "/dashboard/atendimento", icon: MessageSquare, label: t('sidebar.professionals') },
+    { href: "/dashboard/lembretes", icon: Bell, label: "Lembretes" },
     { href: "/dashboard/dispositivos", icon: Watch, label: t('sidebar.devices') },
     { href: "/dashboard/perfil", icon: User, label: t('sidebar.profile') },
   ];
@@ -54,26 +57,30 @@ export default function DashboardLayout({
       )}
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-200 ease-in-out md:static md:translate-x-0 flex flex-col",
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <aside 
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-200 ease-in-out md:static md:translate-x-0 flex flex-col",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+        aria-label="Sidebar principal"
+      >
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100 shrink-0">
-          <Link href="/" className="flex items-center gap-2 text-emerald-600">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-2 text-emerald-600" aria-label="Nutrilia Home">
+            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center" aria-hidden="true">
               <Apple className="h-5 w-5 text-white" />
             </div>
             <span className="font-display font-bold text-xl tracking-tight text-slate-800">Nutrilia</span>
           </Link>
           <button 
-            className="md:hidden text-slate-500"
+            className="md:hidden text-slate-500 p-2"
             onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Fechar menu"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+        <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
           {sidebarLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -81,6 +88,7 @@ export default function DashboardLayout({
                 key={link.href} 
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-colors",
                   isActive 
@@ -88,12 +96,12 @@ export default function DashboardLayout({
                     : "text-slate-500 hover:bg-emerald-50 hover:text-emerald-600"
                 )}
               >
-                <link.icon className={cn("h-5 w-5", isActive ? "" : "text-slate-400")} />
+                <link.icon className={cn("h-5 w-5", isActive ? "" : "text-slate-400")} aria-hidden="true" />
                 {link.label}
               </Link>
             )
           })}
-        </div>
+        </nav>
         
         <div className="p-4 mb-4 shrink-0">
           <div className="bg-slate-900 rounded-2xl p-4 text-white">
@@ -123,14 +131,20 @@ export default function DashboardLayout({
           <button 
             className="md:hidden p-2 -ml-2 text-slate-600"
             onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Abrir menu"
+            aria-expanded={isMobileMenuOpen}
           >
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex items-center space-x-4 hidden md:flex">
             <h1 className="text-xl font-bold text-slate-800">{t('header.welcome').replace('João', firstName)}</h1>
             {user?.isAppleWatchConnected && (
-              <div className="flex items-center text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-2"></div>
+              <div 
+                className="flex items-center text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium"
+                role="status"
+                aria-live="polite"
+              >
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-2" aria-hidden="true"></div>
                 {t('header.connected')}
               </div>
             )}
@@ -143,9 +157,9 @@ export default function DashboardLayout({
             </div>
             <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 shrink-0 overflow-hidden">
               {user?.profilePicture ? (
-                <img src={user?.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                <img src={user?.profilePicture} alt={`Foto de perfil de ${user.name}`} className="w-full h-full object-cover" />
               ) : (
-                initials
+                <span aria-label={user?.name || 'Avatar'}>{initials}</span>
               )}
             </div>
           </div>
@@ -154,6 +168,7 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+      <NotificationManager />
     </div>
   );
 }

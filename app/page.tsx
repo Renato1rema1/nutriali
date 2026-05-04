@@ -24,8 +24,10 @@ export default function Home() {
         </nav>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-            <Globe className="h-4 w-4 mr-2" />
+            <Globe className="h-4 w-4 mr-2" aria-hidden="true" />
+            <label htmlFor="language-select" className="sr-only">Selecione o idioma</label>
             <select 
+              id="language-select"
               className="bg-transparent text-xs font-medium border-none outline-none cursor-pointer hover:text-emerald-600 transition-colors max-w-[120px] truncate" 
               value={language}
               onChange={(e) => setLanguage(e.target.value)}

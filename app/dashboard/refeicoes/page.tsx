@@ -40,7 +40,14 @@ export default function MealsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="w-full bg-emerald-200/50 h-3 rounded-full overflow-hidden">
+          <div 
+            className="w-full bg-emerald-200/50 h-3 rounded-full overflow-hidden" 
+            role="progressbar" 
+            aria-valuenow={recordedMeals.length} 
+            aria-valuemin={0} 
+            aria-valuemax={MEALS.length}
+            aria-label="Progresso de registro de refeições"
+          >
             <div 
               className="bg-emerald-500 h-full rounded-full transition-all duration-500" 
               style={{ width: `${progress}%` }} 
@@ -49,14 +56,24 @@ export default function MealsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4" role="list">
         {MEALS.map((meal) => {
           const isRecorded = recordedMeals.includes(meal.id);
           
           return (
             <Card 
               key={meal.id} 
-              className={`transition-all ${isRecorded ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-200 hover:border-emerald-200 cursor-pointer'}`}
+              role="button"
+              tabIndex={0}
+              aria-pressed={isRecorded}
+              aria-label={`Registrar ${meal.label}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleMeal(meal.id);
+                }
+              }}
+              className={`transition-all transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${isRecorded ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-200 hover:border-emerald-200 cursor-pointer'}`}
               onClick={() => toggleMeal(meal.id)}
             >
               <CardContent className="p-4 flex items-center justify-between">

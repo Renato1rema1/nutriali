@@ -93,6 +93,7 @@ export default function DashboardPage() {
               router.push('/dashboard/refeicoes');
             }
           }}
+          aria-label="Ver registro de refeições"
           className="glass-card p-4 rounded-2xl shadow-sm border-0 border-l-4 border-l-purple-500 bg-white cursor-pointer hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
         >
           <div>
@@ -101,7 +102,7 @@ export default function DashboardPage() {
               <h3 className="text-2xl font-bold font-display text-slate-900">
                 {user?.recordedMeals ? user.recordedMeals.length : 0} / 5
               </h3>
-              <div className="bg-purple-100 text-purple-700 p-1.5 rounded-lg flex items-center justify-center">
+              <div className="bg-purple-100 text-purple-700 p-1.5 rounded-lg flex items-center justify-center" aria-hidden="true">
                 <Utensils className="w-4 h-4" />
               </div>
             </div>
@@ -116,11 +117,11 @@ export default function DashboardPage() {
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>{t('dash.prog.title')}</CardTitle>
+              <CardTitle id="progresso-peso-title">{t('dash.prog.title')}</CardTitle>
               <CardDescription>{t('dash.prog.desc')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px] w-full">
+              <div className="h-[300px] w-full" role="img" aria-labelledby="progresso-peso-title">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={currentWeightData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -143,7 +144,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {nextMeal ? (
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100" role="status">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-medium text-slate-900">{nextMeal.label}</span>
                       <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">{nextMeal.time}</span>
@@ -151,7 +152,7 @@ export default function DashboardPage() {
                     <p className="text-sm text-slate-600">{nextMeal.description}</p>
                   </div>
                 ) : (
-                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100 text-center">
+                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100 text-center" role="status">
                     <span className="font-medium text-emerald-900">Todas as refeições concluídas!</span>
                     <p className="text-sm text-emerald-700 mt-1">Parabéns pelo foco hoje.</p>
                   </div>
@@ -165,11 +166,11 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-500 overflow-hidden shrink-0">
-                    <img src="https://picsum.photos/seed/doctor1/100" alt="Nutritionist" className="h-full w-full object-cover" />
+                  <div className="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-500 overflow-hidden shrink-0 relative">
+                    <img src="https://picsum.photos/seed/doc1/100" alt="Dra. Mariana S." className="h-full w-full object-cover" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">Dra. Mariana S.</p>
+                    <h4 className="font-semibold text-sm">Dra. Mariana S.</h4>
                     <p className="text-xs text-slate-500">{t('dash.nutri.next')}: 15/Mai</p>
                   </div>
                 </div>
@@ -196,7 +197,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <NotebookPen className="h-4 w-4" />
+                <NotebookPen className="h-4 w-4" aria-hidden="true" />
                 {t('dash.notes.title')}
               </CardTitle>
             </CardHeader>
@@ -204,6 +205,7 @@ export default function DashboardPage() {
                <textarea 
                   className="w-full text-sm border-0 bg-slate-50 rounded-lg p-3 focus:ring-1 focus:ring-emerald-500 resize-none h-24 text-slate-700" 
                   placeholder={t('dash.notes.placeholder')}
+                  aria-label={t('dash.notes.title')}
                 />
             </CardContent>
             <CardFooter className="pt-0">

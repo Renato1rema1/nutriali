@@ -35,7 +35,14 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-xl bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden">
         {/* Progress Bar */}
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-100">
+        <div 
+          className="absolute top-0 left-0 w-full h-1.5 bg-slate-100"
+          role="progressbar"
+          aria-valuenow={step}
+          aria-valuemin={1}
+          aria-valuemax={3}
+          aria-label="Progresso do Onboarding"
+        >
           <div 
             className="h-full bg-emerald-500 transition-all duration-300"
             style={{ width: `${(step / 3) * 100}%` }}
@@ -61,12 +68,14 @@ export default function OnboardingPage() {
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Como você se identifica?</label>
-                <div className="grid grid-cols-2 gap-3">
+                <span id="gender-label" className="block text-sm font-medium text-slate-700 mb-2">Como você se identifica?</span>
+                <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="gender-label">
                   {['Masculino', 'Feminino'].map((g) => (
                     <button
                       key={g}
+                      type="button"
                       onClick={() => updatePref('gender', g)}
+                      aria-pressed={preferences.gender === g}
                       className={`h-12 rounded-xl border font-medium transition-colors ${
                         preferences.gender === g 
                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700' 
@@ -80,8 +89,9 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Idade (anos)</label>
+                <label htmlFor="age-input" className="block text-sm font-medium text-slate-700 mb-2">Idade (anos)</label>
                 <input 
+                  id="age-input"
                   type="number" 
                   value={preferences.age}
                   onChange={(e) => updatePref('age', e.target.value)}
@@ -104,10 +114,11 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Peso atual (kg)</label>
+                  <label htmlFor="weight-input" className="block text-sm font-medium text-slate-700 mb-2">Peso atual (kg)</label>
                   <div className="relative">
-                    <Scale className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
+                    <Scale className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" aria-hidden="true" />
                     <input 
+                      id="weight-input"
                       type="number" 
                       value={preferences.weight}
                       onChange={(e) => updatePref('weight', e.target.value)}
@@ -118,10 +129,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Altura (cm)</label>
+                  <label htmlFor="height-input" className="block text-sm font-medium text-slate-700 mb-2">Altura (cm)</label>
                   <div className="relative">
-                    <Ruler className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
+                    <Ruler className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" aria-hidden="true" />
                     <input 
+                      id="height-input"
                       type="number" 
                       value={preferences.height}
                       onChange={(e) => updatePref('height', e.target.value)}
@@ -133,8 +145,8 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Nível de Atividade</label>
-                <div className="grid gap-2">
+                <span id="activity-label" className="block text-sm font-medium text-slate-700 mb-2">Nível de Atividade</span>
+                <div className="grid gap-2" role="group" aria-labelledby="activity-label">
                   {[
                     { val: 'Sedentário', desc: 'Pouco ou nenhum exercício' },
                     { val: 'Leve', desc: '1 a 3 vezes por semana' },
@@ -143,7 +155,9 @@ export default function OnboardingPage() {
                   ].map((level) => (
                     <button
                       key={level.val}
+                      type="button"
                       onClick={() => updatePref('activityLevel', level.val)}
+                      aria-pressed={preferences.activityLevel === level.val}
                       className={`text-left p-3 rounded-xl border transition-colors ${
                         preferences.activityLevel === level.val 
                           ? 'border-blue-500 bg-blue-50' 
@@ -163,12 +177,12 @@ export default function OnboardingPage() {
         {/* Step 3: Goal & Preferences */}
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <h2 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
-              <Target className="h-5 w-5 text-orange-500" />
+            <h2 id="goal-heading" className="text-lg font-semibold text-slate-700 flex items-center gap-2">
+              <Target className="h-5 w-5 text-orange-500" aria-hidden="true" />
               Qual o seu objetivo principal?
             </h2>
             
-            <div className="grid gap-3">
+            <div className="grid gap-3" role="group" aria-labelledby="goal-heading">
               {[
                 'Emagrecimento', 
                 'Ganho de Massa Muscular', 
@@ -177,7 +191,9 @@ export default function OnboardingPage() {
               ].map((goal) => (
                 <button
                   key={goal}
+                  type="button"
                   onClick={() => updatePref('goal', goal)}
+                  aria-pressed={preferences.goal === goal}
                   className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
                     preferences.goal === goal 
                       ? 'border-orange-500 bg-orange-50' 
@@ -188,7 +204,7 @@ export default function OnboardingPage() {
                     {goal}
                   </span>
                   {preferences.goal === goal && (
-                    <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center" aria-hidden="true">
                       <Check className="h-3 w-3 text-white" />
                     </div>
                   )}
