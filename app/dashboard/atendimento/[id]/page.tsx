@@ -86,7 +86,11 @@ export default function ProfessionalProfilePage() {
                 <Button className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
                   <Calendar className="h-4 w-4" /> Agendar Consulta
                 </Button>
-                <Button variant="outline" className="w-full gap-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2"
+                  onClick={() => router.push(`/dashboard/atendimento/chat/${id}`)}
+                >
                   <MessageSquarePlus className="h-4 w-4" /> Enviar Mensagem
                 </Button>
               </div>

@@ -4,8 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Star, MessageSquarePlus, Stethoscope, Video } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function AtendimentoPage() {
+  const router = useRouter();
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -25,7 +28,7 @@ export default function AtendimentoPage() {
           <Card className="border-emerald-200 shadow-emerald-100/50">
             <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
               <div className="h-24 w-24 rounded-full overflow-hidden bg-slate-100 shrink-0">
-                <img src="https://picsum.photos/seed/doctor1/200" alt="Dra. Mariana S." className="h-full w-full object-cover" />
+                <img src="https://picsum.photos/seed/doc1/200" alt="Dra. Mariana S." className="h-full w-full object-cover" />
               </div>
               <div className="flex-1 space-y-3">
                 <div>
@@ -34,7 +37,10 @@ export default function AtendimentoPage() {
                 </div>
                 <p className="text-slate-600 text-sm">Acompanhando você há 3 meses. Sua próxima consulta de retorno está agendada para 15 de Maio.</p>
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
-                  <Button className="gap-2">
+                  <Button 
+                    className="gap-2"
+                    onClick={() => router.push('/dashboard/atendimento/chat/1')}
+                  >
                     <MessageSquarePlus className="h-4 w-4" />
                     Enviar Mensagem
                   </Button>
@@ -73,7 +79,7 @@ export default function AtendimentoPage() {
                     variant="ghost" 
                     size="sm" 
                     className="hidden sm:inline-flex text-emerald-600"
-                    onClick={() => window.location.href = `/dashboard/atendimento/${i}`}
+                    onClick={() => router.push(`/dashboard/atendimento/${i}`)}
                   >
                     Ver Perfil
                   </Button>
