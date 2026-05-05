@@ -50,13 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedUser = localStorage.getItem("nutrilia_user");
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-      setIsLoaded(true);
+    const savedUser = localStorage.getItem("nutrilia_user");
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
     }
+    setIsLoaded(true);
   }, []);
 
   const login = (name: string, email: string) => {
