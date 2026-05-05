@@ -16,9 +16,11 @@ interface User {
   profilePicture?: string;
   mealReminders?: {
     id: string;
+    label: string;
     time: string;
     enabled: boolean;
   }[];
+  goalTargetDates?: Record<string, string>;
 }
 
 interface AuthContextType {

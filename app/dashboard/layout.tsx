@@ -137,7 +137,11 @@ export default function DashboardLayout({
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex items-center space-x-4 hidden md:flex">
-            <h1 className="text-xl font-bold text-slate-800">{t('header.welcome').replace('João', firstName)}</h1>
+            <h1 className="text-xl font-bold text-slate-800">
+              {t('header.welcome').includes('João') 
+                ? t('header.welcome').replace('João', firstName) 
+                : `${t('header.welcome')} ${firstName}`}
+            </h1>
             {user?.isAppleWatchConnected && (
               <div 
                 className="flex items-center text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium"

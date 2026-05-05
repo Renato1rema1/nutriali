@@ -44,7 +44,6 @@ export function NotificationManager() {
           body: `Está na hora do seu ${mealLabel}. Não esqueça de registrar no Nutrilia!`,
           icon: "/icon.png",
           tag: `meal-${mealLabel}`, // Group notifications
-          vibrate: [200, 100, 200]
         });
       }
     };
