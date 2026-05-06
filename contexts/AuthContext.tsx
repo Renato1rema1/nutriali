@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 interface User {
   name: string;
@@ -44,132 +43,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const parseSupabaseUser = (sbUser: any): User => {
-    return {
-      email: sbUser.email,
-      name: sbUser.user_metadata?.name || "Usuário",
-      isOnboarded: sbUser.user_metadata?.isOnboarded || false,
-      preferences: sbUser.user_metadata?.preferences,
-      isAppleWatchConnected: sbUser.user_metadata?.isAppleWatchConnected,
-      recordedMeals: sbUser.user_metadata?.recordedMeals || [],
-      savedPlans: sbUser.user_metadata?.savedPlans || [],
-      profilePicture: sbUser.user_metadata?.profilePicture,
-      mealReminders: sbUser.user_metadata?.mealReminders,
-      goalTargetDates: sbUser.user_metadata?.goalTargetDates,
-    };
-  };
-
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      // Fallback for when Supabase is not configured yet. 
-      // It allows the app to not break immediately.
-      const savedUser = localStorage.getItem("nutrilia_user");
-      if (savedUser) setUser(JSON.parse(savedUser));
-      setIsLoaded(true);
-      return;
-    }
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(parseSupabaseUser(session.user));
-      }
-      setIsLoaded(true);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(parseSupabaseUser(session.user));
-      } else {
-        setUser(null);
-      }
-      setIsLoaded(true);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    const savedUser = localStorage.getItem("nutrilia_user");
+    if (savedUser) setUser(JSON.parse(savedUser));
+    setIsLoaded(true);
   }, []);
 
-  const syncToLocalAsFallback = (updatedUser: User) => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setUser(updatedUser);
-      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
-    }
-  };
-
-  const updateUserMetadata = async (metadataPatch: any) => {
-    if (!user) return;
-    const updatedUser = { ...user, ...metadataPatch };
-    setUser(updatedUser); // Optimistic UI update
-
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      await supabase.auth.updateUser({
-        data: metadataPatch
-      });
-    } else {
-      syncToLocalAsFallback(updatedUser);
-    }
-  };
-
   const login = async (name: string, email: string, password?: string) => {
-    if (!password) password = "DefaultPassword123!";
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        alert("Erro ao fazer login. Verifique suas credenciais no Supabase.");
-        console.error(error);
-        return;
-      }
+    const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+    const existingUser = db[email];
+    
+    if (existingUser) {
+      setUser(existingUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(existingUser));
       router.push("/dashboard");
     } else {
-      const mockUser: User = { name: name || "Usuário Retornando", email, isOnboarded: true };
-      syncToLocalAsFallback(mockUser);
-      router.push("/dashboard");
+      const mockUser: User = { name: name || "Usuário Retornando", email, isOnboarded: false };
+      setUser(mockUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(mockUser));
+      db[email] = mockUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+      router.push("/onboarding");
     }
   };
 
   const register = async (name: string, email: string, password?: string) => {
-    if (!password) password = "DefaultPassword123!";
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            isOnboarded: false,
-          }
-        }
-      });
-      if (error) {
-        alert("Erro ao registrar no Supabase: " + error.message);
-        console.error(error);
-        return;
-      }
-      router.push("/onboarding");
+    const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+    const existingUser = db[email];
+    
+    if (existingUser && existingUser.isOnboarded) {
+      setUser(existingUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(existingUser));
+      router.push("/dashboard");
     } else {
       const newUser: User = { name, email, isOnboarded: false };
-      syncToLocalAsFallback(newUser);
+      setUser(newUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(newUser));
+      db[email] = newUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
       router.push("/onboarding");
     }
   };
 
   const completeOnboarding = (preferences: any) => {
-    updateUserMetadata({ isOnboarded: true, preferences });
-    router.push("/dashboard");
+    if (user) {
+      const updatedUser = { ...user, isOnboarded: true, preferences };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+      
+      router.push("/dashboard");
+    }
   };
 
   const logout = async () => {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      await supabase.auth.signOut();
-    }
     setUser(null);
     localStorage.removeItem("nutrilia_user");
     router.push("/");
   };
 
-  const connectAppleWatch = () => updateUserMetadata({ isAppleWatchConnected: true });
-  const disconnectAppleWatch = () => updateUserMetadata({ isAppleWatchConnected: false });
+  const connectAppleWatch = () => {
+    if (user) {
+      const updatedUser = { ...user, isAppleWatchConnected: true };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+    }
+  };
+
+  const disconnectAppleWatch = () => {
+    if (user) {
+      const updatedUser = { ...user, isAppleWatchConnected: false };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+    }
+  };
 
   const toggleMeal = (mealId: string) => {
     if (user) {
@@ -186,7 +142,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
       
-      updateUserMetadata({ recordedMeals: newMeals, mealReminders: updatedReminders });
+      const updatedUser = { ...user, recordedMeals: newMeals, mealReminders: updatedReminders };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
     }
   };
 
@@ -194,19 +155,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       const currentPlans = user.savedPlans || [];
       const planWithId = { ...plan, id: Date.now().toString() };
-      updateUserMetadata({ savedPlans: [...currentPlans, planWithId] });
+      const updatedUser = { ...user, savedPlans: [...currentPlans, planWithId] };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
     }
   };
 
   const removePlan = (planId: string) => {
     if (user) {
       const currentPlans = user.savedPlans || [];
-      updateUserMetadata({ savedPlans: currentPlans.filter((p: any) => p.id !== planId) });
+      const updatedUser = { ...user, savedPlans: currentPlans.filter((p: any) => p.id !== planId) };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
     }
   };
 
   const updateProfile = (data: Partial<User>) => {
-    updateUserMetadata(data);
+    if (user) {
+      const updatedUser = { ...user, ...data };
+      setUser(updatedUser);
+      localStorage.setItem("nutrilia_user", JSON.stringify(updatedUser));
+      const db = JSON.parse(localStorage.getItem("nutrilia_users_db") || "{}");
+      db[user.email] = updatedUser;
+      localStorage.setItem("nutrilia_users_db", JSON.stringify(db));
+    }
   };
 
   useEffect(() => {
@@ -247,3 +225,4 @@ export function useAuth() {
   }
   return context;
 }
+
