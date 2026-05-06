@@ -1,64 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Watch, Smartphone, Link as LinkIcon, CheckCircle2, X, RefreshCw } from "lucide-react";
+import { Activity, Watch, Link as LinkIcon, CheckCircle2, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function WearablesPage() {
   const { 
     user, 
     connectAppleWatch, 
-    disconnectAppleWatch, 
-    connectGoogleFit, 
-    disconnectGoogleFit,
-    connectGarmin,
-    disconnectGarmin
+    disconnectAppleWatch
   } = useAuth();
   const [showInstructions, setShowInstructions] = useState(false);
-  const [isConnecting, setIsConnecting] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Validate origin
-      if (!event.origin.endsWith('.run.app') && !event.origin.includes('localhost')) {
-        return;
-      }
-
-      if (event.data?.type === 'GOOGLE_FIT_SUCCESS') {
-        connectGoogleFit();
-        setIsConnecting(null);
-      }
-
-      if (event.data?.type === 'GARMIN_SUCCESS') {
-        connectGarmin();
-        setIsConnecting(null);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [connectGoogleFit, connectGarmin]);
-
-  const handleConnectOAuth = async (provider: 'google' | 'garmin') => {
-    setIsConnecting(provider);
-    try {
-      const response = await fetch(`/api/auth/${provider}/url`);
-      if (!response.ok) throw new Error('Failed to fetch auth URL');
-      const { url } = await response.json();
-      
-      const width = 600;
-      const height = 700;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      window.open(url, `connect_${provider}`, `width=${width},height=${height},left=${left},top=${top}`);
-    } catch (error) {
-      console.error(`Error connecting to ${provider}:`, error);
-      setIsConnecting(null);
-    }
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -197,87 +151,6 @@ export default function WearablesPage() {
             )}
           </CardFooter>
         </Card>
-
-        <Card className={user?.isGarminConnected ? "border-[#002A3A] shadow-blue-100/50" : ""}>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div className="h-10 w-10 bg-[#002A3A] text-white rounded-lg flex items-center justify-center mb-4">
-                <Activity className="h-6 w-6" />
-              </div>
-              {user?.isGarminConnected && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Conectado
-                </span>
-              )}
-            </div>
-            <CardTitle>Garmin Connect</CardTitle>
-            <CardDescription>Sincronize seus treinos e métricas avançadas.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Status</span>
-              <span className={user?.isGarminConnected ? "font-medium text-emerald-600" : "font-medium text-slate-400"}>
-                {user?.isGarminConnected ? "Ativo (Última sync: Há 12 min)" : "Desconectado"}
-              </span>
-            </div>
-          </CardContent>
-          <CardFooter className="pt-0">
-            {user?.isGarminConnected ? (
-              <Button onClick={disconnectGarmin} variant="outline" className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">Desconectar</Button>
-            ) : (
-              <Button 
-                onClick={() => handleConnectOAuth('garmin')} 
-                disabled={isConnecting === 'garmin'}
-                className="w-full gap-2 bg-[#002A3A] hover:bg-[#001D29]"
-              >
-                {isConnecting === 'garmin' ? <RefreshCw className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
-                Conectar
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-
-        <Card className={user?.isGoogleFitConnected ? "border-[#ff4a3d] shadow-red-100/50" : ""}>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div className="h-10 w-10 bg-[#ff4a3d] text-white rounded-lg flex items-center justify-center mb-4">
-                <Smartphone className="h-6 w-6" />
-              </div>
-              {user?.isGoogleFitConnected && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Conectado
-                </span>
-              )}
-            </div>
-            <CardTitle>Google Fit</CardTitle>
-            <CardDescription>Conecte seus dados do celular e acessórios Android.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Status</span>
-              <span className={user?.isGoogleFitConnected ? "font-medium text-emerald-600" : "font-medium text-slate-400"}>
-                {user?.isGoogleFitConnected ? "Ativo (Última sync: Agora)" : "Desconectado"}
-              </span>
-            </div>
-          </CardContent>
-          <CardFooter className="pt-0">
-            {user?.isGoogleFitConnected ? (
-              <Button onClick={disconnectGoogleFit} variant="outline" className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">Desconectar</Button>
-            ) : (
-              <Button 
-                onClick={() => handleConnectOAuth('google')} 
-                disabled={isConnecting === 'google'}
-                className="w-full gap-2 bg-[#ff4a3d] hover:bg-[#e03d32]"
-              >
-                {isConnecting === 'google' ? <RefreshCw className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
-                Conectar
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-        
       </div>
     </div>
   );

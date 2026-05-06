@@ -17,6 +17,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const { t } = useLanguage();
   const { login, register } = useAuth();
   
@@ -25,9 +26,9 @@ function LoginForm() {
     const finalEmail = email || "usuario@exemplo.com";
     if (isRegister) {
       const finalName = name || "Novo Usuário";
-      register(finalName, finalEmail);
+      register(finalName, finalEmail, password);
     } else {
-      login("Usuário Retornando", finalEmail);
+      login("Usuário Retornando", finalEmail, password);
     }
   };
 
@@ -100,6 +101,8 @@ function LoginForm() {
                 <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
                 <Input 
                   id="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   type={showPassword ? "text" : "password"}
                   className="pl-10 pr-10 h-11 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" 
                   required
