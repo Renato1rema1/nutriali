@@ -3,10 +3,7 @@
 -- ==========================================
 -- Você pode copiar e colar este código no SQL Editor do Supabase 
 -- caso queira relacionalizar seus dados no futuro.
--- Atualmente, a aplicação salva a maioria dos dados no `user_metadata` nativo do Supabase.
--- Mas se quiser criar uma tabela de perfis (profiles) separada:
 
--- 1. Create a table for public profiles (optional if you want extra relations)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid references auth.users not null primary key,
   email text not null,
@@ -21,20 +18,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 2. Turn on Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 3. Policy: Users can read their own profile
 DROP POLICY IF EXISTS "Usuários podem ver seu próprio perfil" ON public.profiles;
 CREATE POLICY "Usuários podem ver seu próprio perfil" ON public.profiles
   FOR SELECT USING (auth.uid() = id);
 
--- 4. Policy: Users can update their own profile
 DROP POLICY IF EXISTS "Usuários podem atualizar seu próprio perfil" ON public.profiles;
 CREATE POLICY "Usuários podem atualizar seu próprio perfil" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
 
--- 5. Trigger to create a profile automatically when a user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -49,7 +42,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 6. Attach trigger
 DO $$
 BEGIN
   IF NOT EXISTS (

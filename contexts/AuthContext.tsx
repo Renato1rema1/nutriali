@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 interface User {
   name: string;
@@ -12,20 +13,15 @@ interface User {
   recordedMeals?: string[];
   savedPlans?: any[];
   profilePicture?: string;
-  mealReminders?: {
-    id: string;
-    label: string;
-    time: string;
-    enabled: boolean;
-  }[];
-  goalTargetDates?: Record<string, string>;
+  mealReminders?: any[];
+  goalTargetDates?: any;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (name: string, email: string, password?: string) => Promise<void>;
   register: (name: string, email: string, password?: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   completeOnboarding: (preferences: any) => void;
   connectAppleWatch: () => void;
   disconnectAppleWatch: () => void;
@@ -193,19 +189,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!user) {
           router.push("/login");
         } else if (!user.isOnboarded && pathname !== "/onboarding") {
-          // Allow routing on dashboard if onboarded
+          // Allow routing
         }
       }
       
-      if (pathname === "/onboarding") {
-        if (!user) {
-          router.push("/login");
-        } else if (user.isOnboarded) {
-          router.push("/dashboard");
-        }
+      if (user && (pathname === "/login" || pathname === "/")) {
+        router.push("/dashboard");
       }
     }
   }, [user, pathname, isLoaded, router]);
+
+  if (!isLoaded) return null;
 
   return (
     <AuthContext.Provider value={{ 
@@ -225,4 +219,3 @@ export function useAuth() {
   }
   return context;
 }
-
