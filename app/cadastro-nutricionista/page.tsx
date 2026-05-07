@@ -156,8 +156,8 @@ export default function CadastroNutricionistaPage() {
                 Próximo Passo
               </Button>
             ) : (
-              <Link href="/dashboard" className="w-full">
-                <Button className="w-full">Ir para meu Dashboard Parcial</Button>
+              <Link href="/dashboard-nutricionista" className="w-full">
+                <Button className="w-full">Ir para meu painel Nutricionista</Button>
               </Link>
             )}
           </div>

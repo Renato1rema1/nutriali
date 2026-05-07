@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Check, ArrowLeft, Apple } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,16 +10,20 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function PlansPage() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const router = useRouter();
   
-  const backLink = user ? "/dashboard" : "/";
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(user ? "/dashboard" : "/");
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-10">
-        <Link href={backLink} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors" aria-label="Voltar">
+        <a href="#" onClick={handleBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors" aria-label="Voltar">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           <span className="text-sm font-medium">{t('nav.back')}</span>
-        </Link>
+        </a>
         <div className="flex items-center gap-2" aria-hidden="true">
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
             <Apple className="h-5 w-5 text-white" />
