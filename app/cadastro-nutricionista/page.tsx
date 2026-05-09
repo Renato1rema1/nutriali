@@ -7,10 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Apple, Stethoscope, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function CadastroNutricionistaPage() {
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
+  const { registerNutricionista } = useAuth();
+  const router = useRouter();
+  
   const [formData, setFormData] = useState({
     nome: "",
     crn: "",
@@ -156,9 +161,14 @@ export default function CadastroNutricionistaPage() {
                 Próximo Passo
               </Button>
             ) : (
-              <Link href="/dashboard-nutricionista" className="w-full">
-                <Button className="w-full">Ir para meu painel Nutricionista</Button>
-              </Link>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  registerNutricionista(formData.nome, formData.email, formData.crn);
+                }}
+              >
+                Ir para meu painel Nutricionista
+              </Button>
             )}
           </div>
           
