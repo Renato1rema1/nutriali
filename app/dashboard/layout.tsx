@@ -126,7 +126,7 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col w-full min-w-0 md:w-auto">
         <header className="h-16 flex items-center justify-between px-4 sm:px-8 bg-white border-b border-slate-200 sticky top-0 z-30 shrink-0">
           <button 
             className="md:hidden p-2 -ml-2 text-slate-600"

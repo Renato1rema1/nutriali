@@ -77,48 +77,60 @@ export default function PlansPage() {
             </div>
 
             {/* Pro Plan */}
-            <div className="bg-slate-900 rounded-3xl p-8 border-0 shadow-xl flex flex-col relative overflow-hidden ring-4 ring-emerald-500/20">
+            <div className="bg-slate-900 rounded-3xl p-8 border-0 shadow-2xl flex flex-col relative overflow-hidden ring-4 ring-emerald-500/30 transform md:-translate-y-4">
               <div className="absolute top-0 right-0 p-6">
                 <div className="text-[10px] uppercase tracking-wider font-bold bg-gradient-to-r from-emerald-400 to-emerald-500 text-white px-3 py-1 rounded-full shadow-sm">
                   {t('plans.pro.badge')}
                 </div>
               </div>
-              <div className="mb-6 relative z-10">
-                <h3 className="text-xl font-bold text-white">{t('plans.pro.name')}</h3>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-white">{t('plans.pro.price')}</span>
+              <div className="mb-6 relative z-10 text-center md:text-left">
+                <h3 className="text-2xl font-bold text-white mb-2">{t('plans.pro.name')}</h3>
+                <div className="flex items-baseline gap-1 justify-center md:justify-start">
+                  <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">{t('plans.pro.price')}</span>
                   <span className="text-slate-400 font-medium">{t('plans.pro.period')}</span>
                 </div>
-                <p className="text-sm text-slate-400 mt-3">{t('plans.pro.desc')}</p>
+                <p className="text-sm text-slate-300 mt-4 leading-relaxed font-medium">Benefícios exclusivos turbinados por Inteligência Artificial e acompanhamento profissional para resultados mais rápidos.</p>
               </div>
 
-              <ul className="space-y-4 mb-8 flex-1 relative z-10">
-                <li className="flex items-center gap-3 text-slate-300">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <Check className="h-3 w-3 text-emerald-400" />
+              <ul className="space-y-5 mb-8 flex-1 relative z-10">
+                <li className="flex items-start gap-4 text-slate-300">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5 border border-emerald-500/30">
+                    <Check className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <span className="text-sm">{t('plans.pro.feat1')}</span>
+                  <div>
+                    <span className="text-sm font-semibold text-white block mb-1">IA Inteligente e Evolutiva</span>
+                    <span className="text-xs text-slate-400 block leading-relaxed">Dietas que se adaptam em tempo real à sua rotina, treinos e metabolismo.</span>
+                  </div>
                 </li>
-                <li className="flex items-center gap-3 text-slate-300">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <Check className="h-3 w-3 text-emerald-400" />
+                <li className="flex items-start gap-4 text-slate-300">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5 border border-emerald-500/30">
+                    <Check className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <span className="text-sm">{t('plans.pro.feat2')}</span>
+                  <div>
+                    <span className="text-sm font-semibold text-white block mb-1">Suporte Profissional Direto</span>
+                    <span className="text-xs text-slate-400 block leading-relaxed">Conecte-se com nutricionistas reais para ajustes finos e dúvidas pelo app.</span>
+                  </div>
                 </li>
-                <li className="flex items-center gap-3 text-slate-300">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <Check className="h-3 w-3 text-emerald-400" />
+                <li className="flex items-start gap-4 text-slate-300">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5 border border-emerald-500/30">
+                    <Check className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <span className="text-sm">{t('plans.pro.feat3')}</span>
+                  <div>
+                    <span className="text-sm font-semibold text-white block mb-1">Integração Completa</span>
+                    <span className="text-xs text-slate-400 block leading-relaxed">Conecte com smartwatch e Apple Saúde.</span>
+                  </div>
                 </li>
               </ul>
 
-              <Link href="/login?tab=register&plan=pro" className="relative z-10">
-                <Button className="w-full h-12 text-base font-semibold bg-emerald-500 hover:bg-emerald-400 text-white border-0">{t('plans.pro.btn')}</Button>
+              <Link href="/login?tab=register&plan=pro" className="relative z-10 w-full mt-auto block">
+                <Button className="w-full h-14 text-lg font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white border-0 shadow-lg shadow-emerald-500/25 transition-all transform hover:scale-[1.02]">
+                  Começar com Premium
+                </Button>
               </Link>
 
               {/* Background decoration */}
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl rounded-full"></div>
+              <div className="absolute top-0 right-0 -mr-24 -mt-24 w-72 h-72 bg-emerald-500/20 rounded-full blur-[80px]"></div>
+              <div className="absolute bottom-0 left-0 -ml-24 -mb-24 w-72 h-72 bg-teal-500/10 rounded-full blur-[80px]"></div>
             </div>
           </div>
         </div>
