@@ -164,7 +164,7 @@ export default function CadastroNutricionistaPage() {
               <Button 
                 className="w-full" 
                 onClick={() => {
-                  registerNutricionista(formData.nome, formData.email, formData.crn);
+                  registerNutricionista(formData.nome, formData.email, formData.crn, formData.senha);
                 }}
               >
                 Ir para meu painel Nutricionista

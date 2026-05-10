@@ -23,11 +23,13 @@ function LoginForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalEmail = email || "usuario@exemplo.com";
+    const finalPassword = (e.currentTarget.querySelector('#password') as HTMLInputElement).value;
+    
     if (isRegister) {
       const finalName = name || "Novo Usuário";
-      register(finalName, finalEmail);
+      register(finalName, finalEmail, finalPassword);
     } else {
-      login("Usuário Retornando", finalEmail);
+      login(finalEmail, finalPassword);
     }
   };
 

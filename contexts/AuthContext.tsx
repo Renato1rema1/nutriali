@@ -2,7 +2,56 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 export interface User {
   id: string;
@@ -12,15 +61,26 @@ export interface User {
   role?: "user" | "nutricionista";
   crn?: string;
   preferences?: any;
+  savedPlans?: any[];
   profilePicture?: string;
+  isAppleWatchConnected?: boolean;
+  isGoogleFitConnected?: boolean;
+  isGarminConnected?: boolean;
+  mealReminders?: any[];
+  waterReminders?: any;
+  recordedMeals?: string[];
+  waterIntake?: number;
+  activityMinutes?: number;
+  sleepHours?: number;
+  goalTargetDates?: Record<string, string>;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoaded: boolean;
-  login: (email: string) => Promise<void>;
-  register: (name: string, email: string) => Promise<void>;
-  registerNutricionista: (name: string, email: string, crn: string) => Promise<void>;
+  login: (email: string, password?: string) => Promise<void>;
+  register: (name: string, email: string, password?: string) => Promise<void>;
+  registerNutricionista: (name: string, email: string, crn: string, password?: string) => Promise<void>;
   logout: () => Promise<void>;
   completeOnboarding: (preferences: any) => Promise<void>;
   connectAppleWatch: () => Promise<void>;
@@ -29,6 +89,10 @@ interface AuthContextType {
   disconnectGoogleFit: () => Promise<void>;
   connectGarmin: () => Promise<void>;
   disconnectGarmin: () => Promise<void>;
+  savePlan: (plan: any) => Promise<void>;
+  removePlan: (planId: string) => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+  toggleMeal: (mealId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,128 +104,136 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        await fetchProfile(session.user.id, session.user.email || '');
-      } else {
-        setIsLoaded(true);
-      }
-    };
-
-    checkSession();
-
-    // Listen for changes on auth state
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await fetchProfile(session.user.id, session.user.email || '');
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        await fetchProfile(firebaseUser.uid, firebaseUser.email || '');
       } else {
         setUser(null);
         setIsLoaded(true);
       }
     });
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   const fetchProfile = async (id: string, email: string) => {
+    const pathForGetDocs = `profiles/${id}`;
     try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const docRef = doc(db, 'profiles', id);
+      const docSnap = await getDoc(docRef);
 
-      if (profile) {
-        setUser({ ...profile, email });
+      if (docSnap.exists()) {
+        setUser({ ...(docSnap.data() as User), id, email });
+      } else {
+        // Force the app to create a new profile by keeping user mapped with required data but not in DB yet
+        setUser({
+          id,
+          name: auth.currentUser?.displayName || email.split('@')[0],
+          email,
+          isOnboarded: false,
+          role: "user"
+        });
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      handleFirestoreError(error, OperationType.GET, pathForGetDocs);
     } finally {
       setIsLoaded(true);
     }
   };
 
-  const login = async (email: string) => {
-    // Simulating passwordless login for ease of demo or you can use OTP
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin + '/dashboard'
+  const login = async (email: string, password?: string) => {
+    try {
+      if (password) {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ login_hint: email });
+        await signInWithPopup(auth, provider);
       }
-    });
-
-    if (error) {
-      alert("Erro ao fazer login: " + error.message);
-      return;
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao fazer login: " + (error as Error).message);
     }
-    alert("Check your email for the login link!");
   };
 
-  const register = async (name: string, email: string) => {
-    // Registration logic
-    const { data, error } = await supabase.auth.signInWithOtp({ 
-      email,
-      options: {
-        data: {
-          name,
-          role: 'user'
-        },
-        emailRedirectTo: window.location.origin + '/dashboard'
+  const register = async (name: string, email: string, password?: string) => {
+    try {
+      if (password) {
+        const creds = await createUserWithEmailAndPassword(auth, email, password);
+        // We do not save to DB here; fetchProfile will fake the user state 
+        // until the onboarding is completed.
+      } else {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ login_hint: email });
+        await signInWithPopup(auth, provider);
       }
-    });
-    if (error) {
-       console.error(error);
-       return;
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao registrar: " + (error as Error).message);
     }
-    
-    // On magic link click, we would create their profile.
-    // For now, since Supabase requires email verification, we just notify.
-    alert("Enviamos um link de confirmação para " + email);
   };
 
-  const registerNutricionista = async (name: string, email: string, crn: string) => {
-    // Similar registration flow
-    const { data, error } = await supabase.auth.signInWithOtp({ 
-      email,
-      options: {
-        data: {
-          name,
-          crn,
-          role: 'nutricionista'
-        },
-        emailRedirectTo: window.location.origin + '/dashboard-nutricionista'
+  const registerNutricionista = async (name: string, email: string, crn: string, password?: string) => {
+    try {
+      let userId = "";
+      if (password) {
+        const creds = await createUserWithEmailAndPassword(auth, email, password);
+        userId = creds.user.uid;
+      } else {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ login_hint: email });
+        const creds = await signInWithPopup(auth, provider);
+        userId = creds.user.uid;
       }
-    });
-    if (error) {
-       console.error(error);
-       return;
+      
+      const pathForCreate = `profiles/${userId}`;
+      await setDoc(doc(db, 'profiles', userId), {
+        name,
+        email,
+        isOnboarded: true,
+        role: "nutricionista",
+        crn
+      });
+
+      setUser({
+        id: userId,
+        name,
+        email,
+        isOnboarded: true,
+        role: "nutricionista",
+        crn
+      });
+      router.push("/dashboard-nutricionista");
+
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao registrar nutricionista: " + (error as Error).message);
     }
-    
-    // We would store the metadata wait for confirmation
-    // Or you can create an RPC to handle this automatically
-    alert("Enviamos um link de confirmação para seu email nutricional.");
   };
 
   const completeOnboarding = async (preferences: any) => {
     if (!user) return;
-    
-    const { error } = await supabase
-      .from('profiles')
-      .update({ isOnboarded: true, preferences })
-      .eq('id', user.id);
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
 
-    if (!error) {
+    const pathForWrite = `profiles/${userId}`;
+    try {
+      await setDoc(doc(db, 'profiles', userId), {
+        name: user.name,
+        email: user.email,
+        isOnboarded: true,
+        role: user.role || 'user',
+        preferences
+      }, { merge: true });
+
       setUser({ ...user, isOnboarded: true, preferences });
       if (user.role === 'nutricionista') {
         router.push("/dashboard-nutricionista");
       } else {
         router.push("/dashboard");
       }
+    } catch (error) {
+       handleFirestoreError(error, OperationType.WRITE, pathForWrite);
     }
   };
 
@@ -171,9 +243,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const disconnectGoogleFit = async () => {};
   const connectGarmin = async () => {};
   const disconnectGarmin = async () => {};
+  const savePlan = async (plan: any) => { console.log('savePlan', plan); };
+  const removePlan = async (planId: string) => { console.log('removePlan', planId); };
+  const updateProfile = async (data: Partial<User>) => {
+    if (user) {
+      const userId = user.id;
+      const pathForWrite = `profiles/${userId}`;
+      try {
+        await updateDoc(doc(db, 'profiles', userId), {
+          ...data
+        });
+        setUser({ ...user, ...data });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, pathForWrite);
+      }
+    }
+  };
+  const toggleMeal = async (mealId: string) => {};
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error("Logout Error:", e);
+    }
     setUser(null);
     router.push("/");
   };
@@ -228,7 +321,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       connectGoogleFit,
       disconnectGoogleFit,
       connectGarmin,
-      disconnectGarmin
+      disconnectGarmin,
+      savePlan,
+      removePlan,
+      updateProfile,
+      toggleMeal
     }}>
       {children}
     </AuthContext.Provider>

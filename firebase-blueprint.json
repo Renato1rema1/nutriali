@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "Profile": {
+      "title": "Profile",
+      "description": "User profile containing basic info, preferences, and state",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "isOnboarded": { "type": "boolean" },
+        "role": { "type": "string", "enum": ["user", "nutricionista"] },
+        "crn": { "type": "string" },
+        "preferences": { "type": "object" },
+        "savedPlans": { "type": "array" },
+        "profilePicture": { "type": "string" },
+        "isAppleWatchConnected": { "type": "boolean" },
+        "isGoogleFitConnected": { "type": "boolean" },
+        "isGarminConnected": { "type": "boolean" },
+        "mealReminders": { "type": "array" },
+        "waterReminders": { "type": "object" },
+        "recordedMeals": { "type": "array" },
+        "waterIntake": { "type": "number" },
+        "activityMinutes": { "type": "number" },
+        "sleepHours": { "type": "number" },
+        "goalTargetDates": { "type": "object" }
+      },
+      "required": ["name", "email", "isOnboarded", "role"]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": { "$ref": "#/entities/Profile" },
+      "description": "User profiles"
+    }
+  }
+}
