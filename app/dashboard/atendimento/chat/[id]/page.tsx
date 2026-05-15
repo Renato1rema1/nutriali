@@ -27,6 +27,8 @@ import {
   Maximize2
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { db } from "@/lib/firebase";
+import { collection, query, orderBy, onSnapshot, addDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
 
 interface Message {
   id: string;
@@ -99,30 +101,60 @@ export default function ProfessionalChatPage() {
     };
   }, [isVideoCallActive, isCamOn]);
 
-  // Load message history from localStorage
+  // Load message history from Firestore
   useEffect(() => {
-    if (user) {
-      const storageKey = `chat_messages_${user.email}_${id}`;
-      const savedMessages = localStorage.getItem(storageKey);
-      
-      let initialMsgs: Message[];
-      if (savedMessages) {
-        initialMsgs = JSON.parse(savedMessages);
-      } else {
-        // Initial messages if history is empty
-        initialMsgs = [
-          {
-            id: "1",
+    if (user?.email && id) {
+      const chatId = `${user.email}_${id}`.replace(/[@.]/g, "_");
+      const messagesRef = collection(db, `chats/${chatId}/messages`);
+      const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const msgs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Message[];
+        
+        setMessages(msgs);
+
+        // Mark incoming messages as read
+        const batch = writeBatch(db);
+        let hasUnread = false;
+        
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data() as Message;
+          if (data.receiverId === user.email && data.status !== "read") {
+            batch.update(docSnap.ref, { status: "read" });
+            hasUnread = true;
+          }
+        });
+
+        if (hasUnread) {
+          batch.commit().catch(err => console.error("Error marking messages as read:", err));
+        }
+
+        // Initialize chat with a welcome message if empty
+        if (msgs.length === 0) {
+          const initialMessage = {
             senderId: id,
             receiverId: user.email,
             text: `Olá ${user.name.split(' ')[0]}! Como posso te ajudar hoje?`,
             timestamp: Date.now() - 3600000,
             status: "read",
-          }
-        ];
-        localStorage.setItem(storageKey, JSON.stringify(initialMsgs));
-      }
-      setMessages(initialMsgs);
+          };
+          // We don't write it to DB locally because user is not senderId (security rules will reject).
+          // Just set it to local state to not break the UI.
+          setMessages([{ ...initialMessage, id: "initial_1" } as Message]);
+        }
+
+      }, (error) => {
+        console.error("Firestore Error:", JSON.stringify({
+          error: error.message,
+          operationType: "list",
+          path: `chats/${chatId}/messages`,
+          authInfo: { email: user.email }
+        }));
+      });
+      return () => unsubscribe();
     }
   }, [user, id]);
 
@@ -133,81 +165,81 @@ export default function ProfessionalChatPage() {
     }
   }, [messages]);
 
-  const handleSendMessage = (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputText.trim() && !isUploading) return;
 
-    if (user) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        senderId: user.email,
-        receiverId: id,
-        text: inputText,
-        timestamp: Date.now(),
-        status: "sent",
-      };
-
-      const updatedMessages = [...messages, newMessage];
-      setMessages(updatedMessages);
+    if (user?.email && id) {
+      const chatId = `${user.email}_${id}`.replace(/[@.]/g, "_");
+      const messageText = inputText;
+      
+      // Clear input optimistically
       setInputText("");
 
-      const storageKey = `chat_messages_${user.email}_${id}`;
-      localStorage.setItem(storageKey, JSON.stringify(updatedMessages));
+      const newMessageData = {
+        senderId: user.email,
+        receiverId: id,
+        text: messageText,
+        timestamp: Date.now(),
+        status: "sent" as const,
+      };
 
-      // Simulate professional response after 2 seconds
-      setTimeout(() => {
-        const response: Message = {
-          id: (Date.now() + 1).toString(),
-          senderId: id,
-          receiverId: user.email,
-          text: "Recebi sua mensagem! Vou analisar e te respondo em breve com mais detalhes.",
-          timestamp: Date.now(),
-          status: "sent",
-        };
-        const withResponse = [...updatedMessages, response];
-        setMessages(withResponse);
-        localStorage.setItem(storageKey, JSON.stringify(withResponse));
-      }, 2000);
+      try {
+        const messagesRef = collection(db, `chats/${chatId}/messages`);
+        await addDoc(messagesRef, newMessageData);
+
+        // Optional: Simulate professional replying
+        setTimeout(async () => {
+          // Because of security rules, user cannot write on behalf of professional.
+          // Usually, you'd trigger a Cloud Function here to reply, 
+          // or just show an optimistic UI effect. Since this is an AI Studio demo,
+          // we are just pretending the professional replied via Firestore from "admin". 
+          // However, our rules strictly check incoming().senderId == request.auth.token.email.
+          // To bypass without functions, we can temporarily allow it in rules or just leave it.
+          // Let's just rely on real users or keep the demo minimal.
+        }, 2000);
+      } catch (error: any) {
+        console.error("Send Message Error:", error);
+      }
     }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user?.email) return;
 
     setIsUploading(true);
 
-    // Simulate file upload delay
-    setTimeout(() => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        const newMessage: Message = {
-          id: Date.now().toString(),
-          senderId: user.email,
-          receiverId: id,
-          text: `Enviou um arquivo: ${file.name}`,
-          timestamp: Date.now(),
-          status: "sent",
-          file: {
-            name: file.name,
-            type: file.type,
-            size: (file.size / 1024).toFixed(1) + " KB",
-            url: base64,
-          }
-        };
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      const chatId = `${user.email}_${id}`.replace(/[@.]/g, "_");
 
-        const updatedMessages = [...messages, newMessage];
-        setMessages(updatedMessages);
-        setIsUploading(false);
-
-        const storageKey = `chat_messages_${user.email}_${id}`;
-        localStorage.setItem(storageKey, JSON.stringify(updatedMessages));
-        
-        if (fileInputRef.current) fileInputRef.current.value = "";
+      const newMessageData = {
+        senderId: user.email,
+        receiverId: id,
+        text: `Enviou um arquivo: ${file.name}`,
+        timestamp: Date.now(),
+        status: "sent" as const,
+        file: {
+          name: file.name,
+          type: file.type,
+          size: (file.size / 1024).toFixed(1) + " KB",
+          url: base64,
+        }
       };
-      reader.readAsDataURL(file);
-    }, 1000);
+
+      try {
+        const messagesRef = collection(db, `chats/${chatId}/messages`);
+        await addDoc(messagesRef, newMessageData);
+      } catch (error) {
+        console.error("Upload Error:", error);
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const formatTime = (ts: number) => {

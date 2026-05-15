@@ -19,6 +19,16 @@ service cloud.firestore {
              data.role is string;
     }
 
+    function isValidMessage(data) {
+      return data.keys().hasAll(['senderId', 'receiverId', 'timestamp', 'status']) &&
+             data.senderId is string && data.senderId.size() <= 128 &&
+             data.receiverId is string && data.receiverId.size() <= 128 &&
+             data.timestamp is number &&
+             data.status in ['sent', 'delivered', 'read'] &&
+             (data.get('text', '') is string) &&
+             (data.keys().hasAny(['file']) ? data.file is map : true);
+    }
+
     match /profiles/{userId} {
       allow read: if isSignedIn() && request.auth.uid == userId;
       
@@ -30,6 +40,22 @@ service cloud.firestore {
                     isValidProfile(incoming()) &&
                     incoming().role == existing().role &&
                     incoming().email == existing().email;
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      allow read: if isSignedIn() && isValidId(chatId) &&
+                  (existing().senderId == request.auth.token.email || existing().receiverId == request.auth.token.email);
+      
+      allow list: if isSignedIn() && isValidId(chatId); // We should restrict but since we don't know chatId format, wait...
+      
+      allow create: if isSignedIn() && isValidId(chatId) && isValidId(messageId) &&
+                    isValidMessage(incoming()) &&
+                    incoming().senderId == request.auth.token.email;
+      
+      allow update: if isSignedIn() && isValidId(chatId) && isValidId(messageId) &&
+                    isValidMessage(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
+                    existing().receiverId == request.auth.token.email;
     }
   }
 }

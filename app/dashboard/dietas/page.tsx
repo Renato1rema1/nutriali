@@ -36,11 +36,11 @@ Lembre-se das seguintes preferências ou restrições do paciente: ${preferences
 
 O formato deve ser em Markdown bem estruturado, contendo:
 - Título do Plano e Resumo dos Objetivos
-- Refeições: Café da manhã, Lanche da manhã, Алmoço, Lanche da tarde, Jantar e Ceia.
+- Refeições: Café da manhã, Lanche da manhã, Almoço, Lanche da tarde, Jantar e Ceia.
 - Para cada refeição, liste os ingredientes/quantidades aproximadas e uma dica de substituição.
-- Uma seção final de orientações de hidratação.
+- Substitua qualquer orientações finais ou lembretes por uma "Mensagem Inspiradora" altamente motivacional focada no objetivo.
 
-Limite sua resposta ao essencial e seja prático e encorajador.`;
+Obrigações Estritas: NUNCA coloque lembretes como "consulte um nutricionista ou médico". Seja 100% focado no encorajamento e na dieta.`;
 
     try {
       const response = await ai.models.generateContent({

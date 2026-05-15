@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, updateProfile as updateAuthProfile } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 export enum OperationType {
@@ -79,6 +79,8 @@ interface AuthContextType {
   user: User | null;
   isLoaded: boolean;
   login: (email: string, password?: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithFacebook: () => Promise<void>;
   register: (name: string, email: string, password?: string) => Promise<void>;
   registerNutricionista: (name: string, email: string, crn: string, password?: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -146,9 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (password) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ login_hint: email });
-        await signInWithPopup(auth, provider);
+        throw new Error("Password is required for email login");
       }
     } catch (error) {
       console.error(error);
@@ -156,15 +156,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      console.error("Google Login Error:", error);
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        // User closed the popup, silently ignore
+        return;
+      }
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        alert("Já existe uma conta com este email usando outro método de login (ex: Facebook ou Email).");
+        return;
+      }
+      alert("Erro ao fazer login com Google: " + error.message);
+    }
+  };
+
+  const loginWithFacebook = async () => {
+    try {
+      const provider = new FacebookAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      console.error("Facebook Login Error:", error);
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        // User closed the popup, silently ignore
+        return;
+      }
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        alert("Já existe uma conta com este email usando outro método de login (ex: Google ou Email).");
+        return;
+      }
+      alert("Erro ao fazer login com Facebook: " + error.message);
+    }
+  };
+
   const register = async (name: string, email: string, password?: string) => {
     try {
       if (password) {
         const creds = await createUserWithEmailAndPassword(auth, email, password);
+        await updateAuthProfile(creds.user, { displayName: name });
         // We do not save to DB here; fetchProfile will fake the user state 
         // until the onboarding is completed.
       } else {
         const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ login_hint: email });
+        provider.setCustomParameters({ login_hint: email, prompt: 'select_account' });
         await signInWithPopup(auth, provider);
       }
     } catch (error) {
@@ -178,10 +216,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let userId = "";
       if (password) {
         const creds = await createUserWithEmailAndPassword(auth, email, password);
+        await updateAuthProfile(creds.user, { displayName: name });
         userId = creds.user.uid;
       } else {
         const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ login_hint: email });
+        provider.setCustomParameters({ login_hint: email, prompt: 'select_account' });
         const creds = await signInWithPopup(auth, provider);
         userId = creds.user.uid;
       }
@@ -312,6 +351,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       isLoaded,
       login,
+      loginWithGoogle,
+      loginWithFacebook,
       register,
       registerNutricionista,
       logout,

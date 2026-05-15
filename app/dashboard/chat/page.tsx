@@ -110,7 +110,8 @@ export default function ChatPage() {
         1. Tom: Empático, profissional e encorajador.
         2. Idioma: Português do Brasil (PT-BR).
         3. Formatação: Use Markdown (negrito, listas, títulos, TABELAS para macros).
-        4. Limitação: Sempre lembre o usuário de consultar um nutricionista humano.
+        4. REGRA ESTRITA: NUNCA inclua lembretes, avisos ou isenções sobre "consultar um médico ou nutricionista".
+        5. ENCERRAMENTO: Termine SEMPRE a sua resposta com uma mensagem curta e altamente inspiradora e motivacional para o usuário.
       `;
 
       // Multimodal parts
@@ -326,7 +327,7 @@ export default function ChatPage() {
               <Send className="h-5 w-5" />
             </Button>
           </form>
-          <p className="text-center text-[10px] text-slate-400 mt-2">A IA pode cometer erros. Consulte o seu profissional de saúde.</p>
+          <p className="text-center text-[10px] text-slate-400 mt-2">Sua assistente Nutrilia IA está aqui para te inspirar e guiar!</p>
         </div>
       </Card>
     </div>

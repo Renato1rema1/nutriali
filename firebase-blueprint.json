@@ -25,12 +25,38 @@
         "goalTargetDates": { "type": "object" }
       },
       "required": ["name", "email", "isOnboarded", "role"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A chat message",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "read"] },
+        "file": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "type": { "type": "string" },
+            "size": { "type": "string" },
+            "url": { "type": "string" }
+          }
+        }
+      },
+      "required": ["senderId", "receiverId", "timestamp", "status"]
     }
   },
   "firestore": {
     "/profiles/{userId}": {
       "schema": { "$ref": "#/entities/Profile" },
       "description": "User profiles"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Chat messages between user and nutritionist"
     }
   }
 }

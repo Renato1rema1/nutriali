@@ -32,6 +32,30 @@ export default function CadastroNutricionistaPage() {
     if (error) setError("");
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError("O arquivo do certificado deve ter no máximo 10MB.");
+        setFormData({ ...formData, certificado: "" });
+        e.target.value = '';
+        return;
+      }
+      const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        setError("Formato inválido. Aceitamos apenas PDF, PNG ou JPG.");
+        setFormData({ ...formData, certificado: "" });
+        e.target.value = '';
+        return;
+      }
+      
+      setFormData({ ...formData, certificado: e.target.value });
+      if (error) setError("");
+    } else {
+      setFormData({ ...formData, certificado: "" });
+    }
+  };
+
   const handleNextStep = () => {
     if (step === 1) {
       if (!formData.nome || !formData.crn || !formData.email || !formData.senha || !formData.certificado) {
@@ -90,8 +114,8 @@ export default function CadastroNutricionistaPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="certificado">Certificado Profissional</Label>
-                <Input id="certificado" type="file" accept=".pdf,.png,.jpg" className="bg-slate-50 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer" value={formData.certificado} onChange={handleChange} />
-                <p className="text-[10px] text-slate-500">Envie seu diploma ou certificado de especialização para agilizar a verificação.</p>
+                <Input id="certificado" type="file" accept=".pdf,.png,.jpg,application/pdf,image/png,image/jpeg" className="bg-slate-50 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer" value={formData.certificado} onChange={handleFileChange} />
+                <p className="text-[10px] text-slate-500">Envie seu diploma ou certificado de especialização para agilizar a verificação. Tamanho máximo: 10MB.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email Profissional</Label>
