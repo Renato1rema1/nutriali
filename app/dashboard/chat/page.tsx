@@ -13,6 +13,7 @@ type Message = {
   role: "user" | "model";
   content: string;
   images?: string[];
+  timestamp: Date;
 };
 
 const SUGGESTIONS = [
@@ -28,7 +29,8 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
-      content: "Olá! Sou a Nutrilia AI, sua assistente pessoal de saúde. Como posso te ajudar com sua alimentação ou rotina hoje?"
+      content: "Olá! Sou a Nutrilia AI, sua assistente pessoal de saúde. Como posso te ajudar com sua alimentação ou rotina hoje?",
+      timestamp: new Date()
     }
   ]);
   const [input, setInput] = useState("");
@@ -78,7 +80,8 @@ export default function ChatPage() {
     setMessages(prev => [...prev, { 
       role: "user", 
       content: userMessage,
-      images: currentPhotos.length > 0 ? currentPhotos : undefined
+      images: currentPhotos.length > 0 ? currentPhotos : undefined,
+      timestamp: new Date()
     }]);
     
     setIsLoading(true);
@@ -143,10 +146,10 @@ export default function ChatPage() {
       });
       
       const text = response.text || "Desculpe, não consegui gerar uma resposta no momento.";
-      setMessages(prev => [...prev, { role: "model", content: text }]);
+      setMessages(prev => [...prev, { role: "model", content: text, timestamp: new Date() }]);
     } catch (error) {
       console.error("Erro ao gerar resposta:", error);
-      setMessages(prev => [...prev, { role: "model", content: "Ops! Tive um pequeno problema técnico. Pode tentar perguntar novamente?" }]);
+      setMessages(prev => [...prev, { role: "model", content: "Ops! Tive um pequeno problema técnico. Pode tentar perguntar novamente?", timestamp: new Date() }]);
     } finally {
       setIsLoading(false);
     }
@@ -211,6 +214,9 @@ export default function ChatPage() {
                   ) : (
                     <Markdown>{msg.content}</Markdown>
                   )}
+                </div>
+                <div className={`text-[10px] mt-2 opacity-60 font-medium ${msg.role === "user" ? "text-right" : "text-left"}`}>
+                  {msg.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
