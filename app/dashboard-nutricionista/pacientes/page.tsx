@@ -52,10 +52,7 @@ export default function MeusPacientesPage() {
           </h1>
           <p className="text-slate-500">Gerencie seus pacientes e acompanhe seus progressos.</p>
         </div>
-        <Button className="gap-2 shrink-0">
-          <Plus className="h-4 w-4" />
-          Novo Paciente
-        </Button>
+
       </div>
 
       <Card>
