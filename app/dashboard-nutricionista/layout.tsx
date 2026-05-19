@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { NutriliaAssistantWidget } from "@/components/NutriliaAssistantWidget";
 import { NotificationManager } from "@/components/NotificationManager";
 
 export default function NutricionistaDashboardLayout({
@@ -146,6 +147,7 @@ export default function NutricionistaDashboardLayout({
         </main>
       </div>
       <NotificationManager />
+      <NutriliaAssistantWidget />
     </div>
   );
 }
