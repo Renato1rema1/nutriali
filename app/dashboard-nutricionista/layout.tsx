@@ -13,7 +13,8 @@ import {
   X,
   Users,
   CalendarDays,
-  FileText
+  FileText,
+  Bot
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,7 @@ export default function NutricionistaDashboardLayout({
     { href: "/dashboard-nutricionista/pacientes", icon: Users, label: "Meus Pacientes" },
     { href: "/dashboard-nutricionista/agenda", icon: CalendarDays, label: "Agenda" },
     { href: "/dashboard-nutricionista/modelos", icon: FileText, label: "Modelos de Dieta" },
+    { href: "/dashboard-nutricionista/recepcionista", icon: Bot, label: "Recepcionista IA" },
     { href: "/dashboard-nutricionista/chat", icon: MessageSquare, label: "Mensagens" },
     { href: "/dashboard-nutricionista/perfil", icon: User, label: "Meu Perfil" },
   ];

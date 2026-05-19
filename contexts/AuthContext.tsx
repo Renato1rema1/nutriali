@@ -282,8 +282,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const disconnectGoogleFit = async () => {};
   const connectGarmin = async () => {};
   const disconnectGarmin = async () => {};
-  const savePlan = async (plan: any) => { console.log('savePlan', plan); };
-  const removePlan = async (planId: string) => { console.log('removePlan', planId); };
+  const savePlan = async (plan: any) => {
+    if (!user) return;
+    const userId = user.id;
+    const pathForWrite = `profiles/${userId}`;
+    try {
+      const currentPlans = user.savedPlans || [];
+      // avoid duplicates or override by id if needed, but since it's just pushing let's push
+      const updatedPlans = [...currentPlans, plan];
+      await updateDoc(doc(db, 'profiles', userId), {
+        savedPlans: updatedPlans
+      });
+      setUser({ ...user, savedPlans: updatedPlans });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, pathForWrite);
+    }
+  };
+
+  const removePlan = async (planId: string) => {
+    if (!user) return;
+    const userId = user.id;
+    const pathForWrite = `profiles/${userId}`;
+    try {
+      const updatedPlans = (user.savedPlans || []).filter((p: any) => p.id !== planId);
+      await updateDoc(doc(db, 'profiles', userId), {
+        savedPlans: updatedPlans
+      });
+      setUser({ ...user, savedPlans: updatedPlans });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, pathForWrite);
+    }
+  };
   const updateProfile = async (data: Partial<User>) => {
     if (user) {
       const userId = user.id;

@@ -58,12 +58,13 @@ Obrigações Estritas: NUNCA coloque lembretes como "consulte um nutricionista o
     }
   };
 
-  const handleSavePlan = () => {
+  const handleSavePlan = async () => {
     if (result) {
       const titleMatch = result.match(/# (.*)/);
       const title = titleMatch ? titleMatch[1] : `Plano para ${goal}`;
       
-      savePlan({
+      await savePlan({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         title,
         content: result,
         date: new Date().toISOString()

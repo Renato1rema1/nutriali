@@ -14,7 +14,8 @@ import {
   X,
   Utensils,
   Bot,
-  Bell
+  Bell,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -39,6 +40,7 @@ export default function DashboardLayout({
     { href: "/dashboard/chat", icon: Bot, label: "Chat IA" },
     { href: "/dashboard/atendimento", icon: MessageSquare, label: t('sidebar.professionals') },
     { href: "/dashboard/lembretes", icon: Bell, label: "Lembretes" },
+    { href: "/dashboard/agendamento", icon: Calendar, label: "Agendamento (IA)" },
     { href: "/dashboard/dispositivos", icon: Watch, label: t('sidebar.devices') },
     { href: "/dashboard/perfil", icon: User, label: t('sidebar.profile') },
   ];
