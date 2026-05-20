@@ -13,6 +13,9 @@ interface Message {
   content: string;
 }
 
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+
 export function NutriliaAssistantWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -23,8 +26,72 @@ export function NutriliaAssistantWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
+  const [jarvisMode, setJarvisMode] = useState(false);
+  const wakeWordRecognitionRef = useRef<any>(null);
+
   useEffect(() => {
-    // Initialize speech recognition
+    // Continuous wake-word recognition setup
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition && jarvisMode) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event: any) => {
+        const lastResultIndex = event.results.length - 1;
+        const transcript = event.results[lastResultIndex][0].transcript.toLowerCase();
+        
+        if (transcript.includes('nutrília') || transcript.includes('nutrilia') || transcript.includes('notori') || transcript.includes('nutre')) {
+           // Wake word detected!
+           setIsOpen(true);
+           
+           // Extract command if there is anything after wake word
+           let command = transcript.replace(/.*(nutrília|nutrilia|notori|nutre)\s*/, '');
+           if (command.trim().length > 3) {
+                // If there's an immediate command, process it
+                setInput(command);
+                handleSendVoice(command);
+           } else {
+               // Otherwise, just wake up and greet
+               speak("Sim, Doutor, estou ouvindo.");
+               setTimeout(() => {
+                   if (!isListening) toggleListen();
+               }, 1000);
+           }
+        }
+      };
+
+      recognition.onend = () => {
+         // Auto-restart if Jarvis mode is still on
+         if (jarvisMode) {
+             try { wakeWordRecognitionRef.current?.start(); } catch(e) {}
+         }
+      };
+      
+      recognition.onerror = (event: any) => {
+        console.error("Wake word error", event.error);
+        if (event.error !== 'aborted' && jarvisMode) {
+            setTimeout(() => {
+                try { wakeWordRecognitionRef.current?.start(); } catch(e) {}
+            }, 1000);
+        }
+      };
+
+      wakeWordRecognitionRef.current = recognition;
+      try { recognition.start(); } catch(e) {}
+    }
+
+    return () => {
+       if (wakeWordRecognitionRef.current) {
+           wakeWordRecognitionRef.current.onend = null;
+           wakeWordRecognitionRef.current.stop();
+       }
+    };
+  }, [jarvisMode, isListening]); // we might pause wake word if widget is actively listening
+
+  useEffect(() => {
+    // Normal speech recognition for the widget
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -137,25 +204,42 @@ export function NutriliaAssistantWidget() {
         setIsListening(false);
     } else {
         setInput("");
-        setIsListening(true);
-        try {
-           recognitionRef.current?.start();
-        } catch(e) {
-           console.error("Microphone in use", e);
+        
+        if (recognitionRef.current) {
+            setIsListening(true);
+            try {
+               recognitionRef.current.start();
+            } catch(e) {
+               console.error("Microphone in use", e);
+               setIsListening(false);
+               alert("Erro ao iniciar microfone. Verifique suas permissões.");
+            }
+        } else {
+            alert("Seu navegador não suporta reconhecimento de voz nativo.");
         }
+    }
+  };
+
+  const handleGlobalMicClick = () => {
+    if (!isOpen) {
+        setIsOpen(true);
+        // Wait for widget to open and then start listening
+        setTimeout(() => {
+            if (!isListening) toggleListen();
+        }, 500);
     }
   };
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-50 flex gap-2 items-center">
         {!isOpen && (
           <Button 
-            onClick={() => setIsOpen(true)}
+            onClick={handleGlobalMicClick}
             className="h-16 w-16 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-xl flex items-center justify-center group relative"
           >
             <div className="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-20"></div>
-            <Bot className="h-8 w-8 group-hover:scale-110 transition-transform text-white" />
+            <Mic className="h-7 w-7 group-hover:scale-110 transition-transform text-white" />
           </Button>
         )}
       </div>
@@ -178,9 +262,22 @@ export function NutriliaAssistantWidget() {
                 </div>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-slate-300 hover:text-white hover:bg-slate-800 -mr-2">
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 mr-2">
+                 <Label htmlFor="jarvis-mode" className="text-[10px] uppercase text-purple-300 font-bold tracking-wider cursor-pointer">
+                    Modo Jarvis
+                 </Label>
+                 <Switch 
+                   id="jarvis-mode" 
+                   checked={jarvisMode} 
+                   onCheckedChange={setJarvisMode}
+                   className="data-[state=checked]:bg-purple-500 scale-75 origin-right"
+                 />
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-slate-300 hover:text-white hover:bg-slate-800 -mr-2">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </CardHeader>
 
           <CardContent className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-4">
