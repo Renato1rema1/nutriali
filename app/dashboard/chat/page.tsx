@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bot, Send, User, Camera, Sparkles, X, Info, Trash2 } from "lucide-react";
-import { GoogleGenAI } from "@google/genai";
 import Markdown from "react-markdown";
 
 type Message = {
@@ -89,63 +88,28 @@ export default function ChatPage() {
     setPhotos({});
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-      
-      const systemInstruction = `
-        Você é a Nutrilia AI, uma assistente virtual de elite especializada em nutrição, dietas e bem-estar.
-        Seu objetivo é fornecer conselhos práticos, baseados em ciência e extremamente motivadores.
-        
-        PERFIL DO USUÁRIO:
-        - Nome: ${user?.name || "Usuário"}
-        - Idade: ${user?.preferences?.age || "Não informada"} anos
-        - Peso: ${user?.preferences?.weight || "Não informado"} kg
-        - Objetivo Principal: ${user?.preferences?.goal || "Saúde geral"}
-        
-        CAPACIDADE ESPECIAL: ANALISADOR DE PRATOS
-        Quando o usuário envia 3 fotos (Angulos: Cima, Esquerda, Direita), você deve:
-        1. Identificar todos os alimentos no prato.
-        2. Estimar o volume/gramagem de cada item baseando-se na perspectiva tridimensional das fotos.
-        3. Calcular as calorias totais e macronutrientes (Proteínas, Carboidratos, Gorduras).
-        4. Avaliar se a refeição está alinhada com o Objetivo do usuário.
-        5. Fornecer uma dica de melhoria ou elogio pela escolha.
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: messages.concat({
+            role: "user",
+            content: userMessage,
+            timestamp: new Date()
+          }),
+          photos: currentPhotos,
+          userProfile: user,
+        }),
+      });
 
-        DIRETRIZES DE RESPOSTA:
-        1. Tom: Empático, profissional e encorajador.
-        2. Idioma: Português do Brasil (PT-BR).
-        3. Formatação: Use Markdown (negrito, listas, títulos, TABELAS para macros).
-        4. REGRA ESTRITA: NUNCA inclua lembretes, avisos ou isenções sobre "consultar um médico ou nutricionista".
-        5. ENCERRAMENTO: Termine SEMPRE a sua resposta com uma mensagem curta e altamente inspiradora e motivacional para o usuário.
-      `;
-
-      // Multimodal parts
-      const userParts: any[] = [{ text: userMessage }];
-      if (currentPhotos.length > 0) {
-        currentPhotos.forEach(dataUrl => {
-          const base64Data = dataUrl.split(',')[1];
-          userParts.push({
-            inlineData: {
-              data: base64Data,
-              mimeType: "image/jpeg"
-            }
-          });
-        });
+      if (!response.ok) {
+        throw new Error("Erro na requisição ao servidor.");
       }
 
-      const history = messages.map(msg => ({
-        role: msg.role,
-        parts: [{ text: msg.content }]
-      }));
-
-      const response = await (ai as any).models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: history.concat({ role: "user", parts: userParts }),
-        config: {
-          systemInstruction,
-          temperature: 0.7,
-        }
-      });
-      
-      const text = response.text || "Desculpe, não consegui gerar uma resposta no momento.";
+      const data = await response.json();
+      const text = data.text || "Desculpe, não consegui gerar uma resposta no momento.";
       setMessages(prev => [...prev, { role: "model", content: text, timestamp: new Date() }]);
     } catch (error) {
       console.error("Erro ao gerar resposta:", error);

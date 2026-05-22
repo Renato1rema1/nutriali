@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { motion } from "motion/react";
 import { Bot, Mic, X, Loader2, Sparkles, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +23,41 @@ export function NutriliaAssistantWidget() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const [jarvisMode, setJarvisMode] = useState(false);
   const wakeWordRecognitionRef = useRef<any>(null);
+  const jarvisModeRef = useRef<boolean>(jarvisMode);
+
+  const handleJarvisToggle = async (checked: boolean) => {
+    if (checked) {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+           stream.getTracks().forEach(track => track.stop());
+        }
+        setJarvisMode(true);
+      } catch (err: any) {
+        console.warn("Microphone permission/device error:", err);
+        if (err.name === 'NotFoundError' || err.message?.includes('device not found')) {
+            alert("Nenhum microfone foi detectado. Por favor, conecte um microfone ou verifique suas configurações de hardware para usar o Modo Jarvis.");
+        } else {
+            alert("Permissão de microfone negada. Verifique as configurações do seu navegador para usar o Modo Jarvis.");
+        }
+        setJarvisMode(false);
+      }
+    } else {
+      setJarvisMode(false);
+    }
+  };
+
+  useEffect(() => {
+    jarvisModeRef.current = jarvisMode;
+  }, [jarvisMode]);
 
   useEffect(() => {
     // Continuous wake-word recognition setup
@@ -64,16 +94,21 @@ export function NutriliaAssistantWidget() {
 
       recognition.onend = () => {
          // Auto-restart if Jarvis mode is still on
-         if (jarvisMode) {
+         if (jarvisModeRef.current) {
              try { wakeWordRecognitionRef.current?.start(); } catch(e) {}
          }
       };
       
       recognition.onerror = (event: any) => {
-        console.error("Wake word error", event.error);
-        if (event.error !== 'aborted' && jarvisMode) {
+        console.warn("Wake word error:", event.error);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            jarvisModeRef.current = false;
+            setJarvisMode(false); // Disable Jarvis mode if permission denied
+        } else if (event.error !== 'aborted' && jarvisModeRef.current) {
             setTimeout(() => {
-                try { wakeWordRecognitionRef.current?.start(); } catch(e) {}
+                if (jarvisModeRef.current) {
+                    try { wakeWordRecognitionRef.current?.start(); } catch(e) {}
+                }
             }, 1000);
         }
       };
@@ -110,7 +145,7 @@ export function NutriliaAssistantWidget() {
       };
       
       recognition.onerror = (event: any) => {
-        console.error("Speech recognition error", event.error);
+        console.warn("Speech recognition error:", event.error);
         setIsListening(false);
       };
 
@@ -125,11 +160,44 @@ export function NutriliaAssistantWidget() {
       const cleanText = text.replace(/[*#]/g, '');
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'pt-BR';
-      utterance.rate = 1.0;
-      utterance.pitch = 1.1; // A slightly higher pitch for a female AI voice
+      
+      const voiceTone = user?.preferences?.voiceTone || "Feminino Calmo";
+      let rate = 1.0;
+      let pitch = 1.1;
+
+      if (voiceTone === "Feminino Empático") {
+        rate = 0.95; pitch = 1.2;
+      } else if (voiceTone === "Feminino Dinâmico") {
+        rate = 1.2; pitch = 1.2;
+      } else if (voiceTone === "Feminino Suave") {
+        rate = 0.9; pitch = 1.1;
+      } else if (voiceTone === "Masculino Calmo") {
+        rate = 0.95; pitch = 0.8;
+      } else if (voiceTone === "Masculino Motivador") {
+        rate = 1.15; pitch = 0.9;
+      } else if (voiceTone === "Robótico") {
+        rate = 1.0; pitch = 0.5;
+      }
+
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      utteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -177,7 +245,8 @@ export function NutriliaAssistantWidget() {
         body: JSON.stringify({
           messages: [...messages, { role: "user", content: userText }],
           currentTime,
-          mockAgenda
+          mockAgenda,
+          voiceTone: user?.preferences?.voiceTone || "Feminino Calmo"
         })
       });
 
@@ -185,7 +254,7 @@ export function NutriliaAssistantWidget() {
       
       if (data.text) {
         setMessages(prev => [...prev, { role: "bot", content: data.text }]);
-        speak(data.text);
+        speak(data.spoken || data.text);
       } else {
         throw new Error("No text response");
       }
@@ -198,24 +267,38 @@ export function NutriliaAssistantWidget() {
     }
   };
 
-  const toggleListen = () => {
+  const toggleListen = async () => {
     if (isListening) {
         recognitionRef.current?.stop();
         setIsListening(false);
     } else {
         setInput("");
         
-        if (recognitionRef.current) {
-            setIsListening(true);
-            try {
-               recognitionRef.current.start();
-            } catch(e) {
-               console.error("Microphone in use", e);
-               setIsListening(false);
-               alert("Erro ao iniciar microfone. Verifique suas permissões.");
+        try {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+               const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+               stream.getTracks().forEach(track => track.stop());
             }
-        } else {
-            alert("Seu navegador não suporta reconhecimento de voz nativo.");
+
+            if (recognitionRef.current) {
+                setIsListening(true);
+                try {
+                   recognitionRef.current.start();
+                } catch(e) {
+                   console.warn("Microphone in use:", e);
+                   setIsListening(false);
+                   alert("Erro ao iniciar microfone. Verifique se outro aplicativo está usando-o.");
+                }
+            } else {
+                alert("Seu navegador não suporta reconhecimento de voz nativo.");
+            }
+        } catch (err: any) {
+            console.warn("Microphone permission/device error:", err);
+            if (err.name === 'NotFoundError' || err.message?.includes('device not found')) {
+                alert("Nenhum microfone foi detectado. Por favor, conecte um microfone ou verifique suas configurações de hardware.");
+            } else {
+                alert("Permissão de microfone negada.");
+            }
         }
     }
   };
@@ -249,16 +332,34 @@ export function NutriliaAssistantWidget() {
           <CardHeader className="bg-slate-900 text-white px-4 py-3 pb-4 flex flex-row items-center justify-between shrink-0 rounded-t-xl rounded-b-none items-center">
             <div className="flex items-center gap-3">
               <div className="relative">
-                 <div className="absolute inset-0 bg-purple-500 rounded-full blur-sm animate-pulse"></div>
-                 <div className="h-10 w-10 bg-slate-800 border-2 border-purple-500 rounded-full flex items-center justify-center relative z-10">
-                    <Sparkles className="h-5 w-5 text-purple-300" />
+                 <div className={`absolute inset-0 bg-purple-500 rounded-full blur-sm ${isSpeaking ? 'animate-ping opacity-40' : 'animate-pulse'}`}></div>
+                 <div className="h-10 w-10 bg-slate-800 border-2 border-purple-500 rounded-full flex items-center justify-center relative z-10 overflow-hidden">
+                    {isSpeaking ? (
+                      <div className="flex items-end gap-0.5 h-3 justify-center w-full">
+                        {[0, 1, 2, 3].map((i) => (
+                          <motion.div
+                            key={i}
+                            animate={{ height: ["4px", "12px", "4px"] }}
+                            transition={{
+                              duration: 0.8,
+                              repeat: Infinity,
+                              delay: i * 0.15,
+                              ease: "easeInOut",
+                            }}
+                            className="w-1 bg-purple-300 rounded-full"
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <Sparkles className="h-5 w-5 text-purple-300" />
+                    )}
                  </div>
               </div>
               <div>
                 <CardTitle className="text-base font-display">Nutrilia (IA)</CardTitle>
                 <div className="text-xs text-slate-300 flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Sua Assistente Pessoal
+                  <span className={`h-1.5 w-1.5 rounded-full ${isSpeaking ? 'bg-purple-500 animate-pulse' : 'bg-emerald-400 animate-pulse'}`}></span>
+                  {isSpeaking ? 'Falando...' : 'Sua Assistente Pessoal'}
                 </div>
               </div>
             </div>
@@ -270,7 +371,7 @@ export function NutriliaAssistantWidget() {
                  <Switch 
                    id="jarvis-mode" 
                    checked={jarvisMode} 
-                   onCheckedChange={setJarvisMode}
+                   onCheckedChange={handleJarvisToggle}
                    className="data-[state=checked]:bg-purple-500 scale-75 origin-right"
                  />
               </div>

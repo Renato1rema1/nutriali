@@ -5,20 +5,24 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, currentTime, mockAgenda } = await req.json();
+    const { messages, currentTime, mockAgenda, voiceTone } = await req.json();
 
     const systemPrompt = `Você é a Nutrilia, uma assistente virtual de IA tipo "Jarvis" de um nutricionista (o "Doutor").
 O doutor conversará com você por voz ou texto.
-Sua personalidade é extremamente eficiente, prestativa, direta e educada. Responda de forma clara, natural para ser falada em áudio (evite formatações complexas como tabelas ou muitos asteriscos). Chame o usuário de "Doutor" ou "Senhor".
+Sua personalidade é extremamente eficiente, prestativa, direta e educada. 
+SEU TOM E ESTILO DE VOZ SELECIONADO: "${voiceTone || "Feminino Calmo"}"
+Aja e formule suas respostas de acordo com este tom.
 
 Hora e data atual: ${currentTime}
 
-Agenda do Doutor hoje/amanhã:
+Agenda do Doutor:
 ${JSON.stringify(mockAgenda, null, 2)}
 
-Seja inteligente sobre o horário. Se uma consulta já passou, diga que já passou. Se ele perguntar qual a próxima, olhe o horário atual.
-
-Mantenha as respostas relativamente curtas, pois elas serão lidas em voz alta pelo sistema Text-to-Speech.`;
+Você DEVE retornar sua resposta EXCLUSIVAMENTE em formato JSON, com as seguintes chaves:
+{
+  "textResponse": "A resposta que será mostrada no chat escrito para o doutor. Pode conter formatações ricas em Markdown, listas, detalhes, etc.",
+  "spokenResponse": "A resposta que será FALADA em voz alta. DEVE ser curta, direta, natural, imediata (como uma IA super inteligente real falando). Sem caracteres especiais, sem tabelas, apenas linguagem natural falada."
+}`;
 
     const chat = ai.chats.create({
       model: "gemini-3.5-flash",
@@ -28,25 +32,30 @@ Mantenha as respostas relativamente curtas, pois elas serão lidas em voz alta p
       },
     });
 
-    // Send history
-    for (let i = 0; i < messages.length - 1; i++) {
-        const msg = messages[i];
-        if (msg.role === 'user') {
-            await chat.sendMessage({ message: msg.content, }); // not exactly correct for history. Let's format manually or use the proper history API. 
-            // Wait, we can just send everything up to the last message as context if we don't want to use the chat session properly, or we format it.
-        }
-    }
-
-    // Actually, simple generation is easier:
     const formattedMessages = messages.map((m: any) => `${m.role === 'user' ? 'Doutor' : 'Nutrilia'}: ${m.content}`).join('\n');
-    const prompt = `${systemPrompt}\n\nHistórico da conversa:\n${formattedMessages}\n\nNutrilia:`;
+    const prompt = `${systemPrompt}\n\nHistórico da conversa:\n${formattedMessages}\n\nRetorne o JSON:`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",
       contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      }
     });
-
-    return NextResponse.json({ text: response.text });
+    
+    try {
+        const text = response.text || "{}";
+        let parsed = JSON.parse(text.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, ''));
+        return NextResponse.json({ 
+            text: parsed.textResponse || parsed.spokenResponse || "Sem resposta em texto.",
+            spoken: parsed.spokenResponse || parsed.textResponse || "Não entendi." 
+        });
+    } catch (e) {
+        return NextResponse.json({ 
+            text: response.text,
+            spoken: response.text?.replace(/[*#]/g, '') 
+        });
+    }
   } catch (error) {
     console.error("Erro no assistente:", error);
     return NextResponse.json({ error: "Erro ao gerar resposta." }, { status: 500 });

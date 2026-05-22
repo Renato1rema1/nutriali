@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 
 export default function MeusPacientesPage() {
   const router = useRouter();
@@ -43,7 +44,12 @@ export default function MeusPacientesPage() {
   const filteredPatients = patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="max-w-5xl mx-auto space-y-6 pb-12"
+    >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-slate-900 tracking-tight flex items-center gap-2">
@@ -120,6 +126,6 @@ export default function MeusPacientesPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

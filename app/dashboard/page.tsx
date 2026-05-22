@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Activity, Flame, Utensils, Droplet, NotebookPen } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
@@ -20,6 +20,7 @@ const MEALS = [
 
 export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [chartView, setChartView] = useState<"weight" | "water" | "calories">("weight");
   const { t } = useLanguage();
   const { user } = useAuth();
   const router = useRouter();
@@ -32,6 +33,26 @@ export default function DashboardPage() {
     { name: 'Sem 3', peso: Math.round((userWeight + 1.1) * 10) / 10 },
     { name: 'Sem 4', peso: Math.round((userWeight + 0.5) * 10) / 10 },
     { name: 'Atual', peso: userWeight },
+  ];
+
+  const waterIntakeData = [
+    { name: 'Seg', agua: 1.5 },
+    { name: 'Ter', agua: 2.1 },
+    { name: 'Qua', agua: 1.8 },
+    { name: 'Qui', agua: 2.5 },
+    { name: 'Sex', agua: 2.2 },
+    { name: 'Sáb', agua: 1.9 },
+    { name: 'Dom', agua: 2.1 },
+  ];
+
+  const caloriesData = [
+    { name: 'Seg', calorias: 1850 },
+    { name: 'Ter', calorias: 1900 },
+    { name: 'Qua', calorias: 1750 },
+    { name: 'Qui', calorias: 2100 },
+    { name: 'Sex', calorias: 1950 },
+    { name: 'Sáb', calorias: 2300 },
+    { name: 'Dom', calorias: 2000 },
   ];
 
   const isWatchConnected = user?.isAppleWatchConnected;
@@ -120,23 +141,89 @@ export default function DashboardPage() {
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle id="progresso-peso-title">{t('dash.prog.title')}</CardTitle>
-              <CardDescription>{t('dash.prog.desc')}</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle id="progresso-peso-title">
+                  {chartView === "weight" && t('dash.prog.title')}
+                  {chartView === "water" && "Consumo de Água (L)"}
+                  {chartView === "calories" && "Calorias Queimadas (kcal)"}
+                </CardTitle>
+                <CardDescription>
+                  {chartView === "weight" && t('dash.prog.desc')}
+                  {chartView === "water" && "Seu histórico semanal de hidratação"}
+                  {chartView === "calories" && "Seu histórico semanal de gasto calórico"}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant={chartView === "weight" ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setChartView("weight")}
+                  className={chartView === "weight" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                >
+                  <Activity className="h-4 w-4 mr-2" /> Peso
+                </Button>
+                <Button 
+                  variant={chartView === "water" ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setChartView("water")}
+                  className={chartView === "water" ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  <Droplet className="h-4 w-4 mr-2" /> Água
+                </Button>
+                <Button 
+                  variant={chartView === "calories" ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setChartView("calories")}
+                  className={chartView === "calories" ? "bg-orange-500 hover:bg-orange-600" : ""}
+                >
+                  <Flame className="h-4 w-4 mr-2" /> Calorias
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full" role="img" aria-labelledby="progresso-peso-title">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={currentWeightData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Line type="monotone" dataKey="peso" stroke="#059669" strokeWidth={3} dot={{ r: 4, fill: '#059669', strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                {chartView === "weight" && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={currentWeightData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                      <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Line type="monotone" dataKey="peso" stroke="#059669" strokeWidth={3} dot={{ r: 4, fill: '#059669', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+                {chartView === "water" && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={waterIntakeData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                      <YAxis domain={[0, 4]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        cursor={{ fill: '#f1f5f9' }}
+                      />
+                      <Bar dataKey="agua" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+                {chartView === "calories" && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={caloriesData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                      <YAxis domain={[0, 3000]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        cursor={{ fill: '#f1f5f9' }}
+                      />
+                      <Bar dataKey="calorias" fill="#f97316" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { motion } from "motion/react";
 
 export default function PacienteProfilePage() {
   const params = useParams();
@@ -62,7 +63,12 @@ export default function PacienteProfilePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="max-w-5xl mx-auto space-y-6 pb-12"
+    >
       <div className="flex items-center gap-4 mb-2">
         <Link href="/dashboard-nutricionista/pacientes">
           <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-slate-900 bg-white">
@@ -172,6 +178,6 @@ export default function PacienteProfilePage() {
             </Card>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

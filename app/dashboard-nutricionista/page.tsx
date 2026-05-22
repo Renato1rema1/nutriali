@@ -5,6 +5,7 @@ import { Users, FileText, CalendarDays, TrendingUp, MessageSquare } from "lucide
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 
 export default function NutricionistaDashboardPage() {
   const { user } = useAuth();
@@ -12,7 +13,12 @@ export default function NutricionistaDashboardPage() {
   const firstName = user?.name ? user.name.split(' ')[0] : 'Nutricionista';
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="max-w-5xl mx-auto space-y-6 pb-12"
+    >
       <div>
         <h1 className="text-2xl font-bold font-display text-slate-900 tracking-tight">
           Visão Geral - Clínica Nutrilia
@@ -172,6 +178,6 @@ export default function NutricionistaDashboardPage() {
           </CardFooter>
         </Card>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -7,10 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Apple, Bot, Loader2, Sparkles, Bookmark, Trash2, History } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { GoogleGenAI } from "@google/genai";
 import { useAuth } from "@/contexts/AuthContext";
-
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
 export default function DietasIAPage() {
   const { user, savePlan, removePlan } = useAuth();
@@ -31,25 +28,24 @@ export default function DietasIAPage() {
     setResult(null);
     setSaveSuccess(false);
 
-    const prompt = `Atue como um nutricionista virtual altamente qualificado. 
-Crie um plano alimentar diário (1 dia de exemplo) focado no objetivo: ${goal}.
-Lembre-se das seguintes preferências ou restrições do paciente: ${preferences || "Nenhuma especificada"}.
-
-O formato deve ser em Markdown bem estruturado, contendo:
-- Título do Plano e Resumo dos Objetivos
-- Refeições: Café da manhã, Lanche da manhã, Almoço, Lanche da tarde, Jantar e Ceia.
-- Para cada refeição, liste os ingredientes/quantidades aproximadas e uma dica de substituição.
-- Substitua qualquer orientações finais ou lembretes por uma "Mensagem Inspiradora" altamente motivacional focada no objetivo.
-
-Obrigações Estritas: NUNCA coloque lembretes como "consulte um nutricionista ou médico". Seja 100% focado no encorajamento e na dieta.`;
-
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: prompt,
+      const response = await fetch("/api/dietas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          goal,
+          preferences,
+        }),
       });
 
-      setResult(response.text || "Não foi possível gerar a resposta.");
+      if (!response.ok) {
+        throw new Error("Erro na requisição ao servidor.");
+      }
+
+      const data = await response.json();
+      setResult(data.text || "Não foi possível gerar a resposta.");
     } catch (error: any) {
       console.error(error);
       setResult("Desculpe, ocorreu um erro ao gerar a sua dieta. Tente novamente mais tarde.");
