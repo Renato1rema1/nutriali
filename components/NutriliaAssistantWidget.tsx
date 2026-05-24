@@ -62,15 +62,23 @@ export function NutriliaAssistantWidget() {
   useEffect(() => {
     // Continuous wake-word recognition setup
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition && jarvisMode) {
+    // Only run wake word if Jarvis mode is on AND we are not currently listening actively for a command
+    if (SpeechRecognition && jarvisMode && !isListening) {
       const recognition = new SpeechRecognition();
       recognition.lang = 'pt-BR';
       recognition.continuous = true;
       recognition.interimResults = false;
 
       recognition.onresult = (event: any) => {
-        const lastResultIndex = event.results.length - 1;
-        const transcript = event.results[lastResultIndex][0].transcript.toLowerCase();
+        let newTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                newTranscript += event.results[i][0].transcript + " ";
+            }
+        }
+        const transcript = newTranscript.trim().toLowerCase();
+        
+        if (!transcript) return;
         
         if (transcript.includes('nutrília') || transcript.includes('nutrilia') || transcript.includes('notori') || transcript.includes('nutre')) {
            // Wake word detected!
@@ -83,18 +91,22 @@ export function NutriliaAssistantWidget() {
                 setInput(command);
                 handleSendVoice(command);
            } else {
-               // Otherwise, just wake up and greet
-               speak("Sim, Doutor, estou ouvindo.");
-               setTimeout(() => {
-                   if (!isListening) toggleListen();
-               }, 1000);
+               // Otherwise, just wake up and greet with Jarvis flair
+               const greetings = ["Ao seu dispor.", "Sim, chefe?", "Sempre apostos, doutor.", "Pois não?"];
+               const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+               speak(randomGreeting);
+               
+               // Start listening immediately
+               if (!isListening) {
+                   setTimeout(() => toggleListen(), 600); // short delay to let voice start
+               }
            }
         }
       };
 
       recognition.onend = () => {
          // Auto-restart if Jarvis mode is still on
-         if (jarvisModeRef.current) {
+         if (jarvisModeRef.current && !isListening) {
              try { wakeWordRecognitionRef.current?.start(); } catch(e) {}
          }
       };
@@ -104,13 +116,8 @@ export function NutriliaAssistantWidget() {
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
             jarvisModeRef.current = false;
             setJarvisMode(false); // Disable Jarvis mode if permission denied
-        } else if (event.error !== 'aborted' && jarvisModeRef.current) {
-            setTimeout(() => {
-                if (jarvisModeRef.current) {
-                    try { wakeWordRecognitionRef.current?.start(); } catch(e) {}
-                }
-            }, 1000);
         }
+        // Let onend handle the restart
       };
 
       wakeWordRecognitionRef.current = recognition;
@@ -156,23 +163,40 @@ export function NutriliaAssistantWidget() {
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      // Remove markdowns roughly for speech
+      // Remove markdowns and special chars roughly for speech
       const cleanText = text.replace(/[*#]/g, '');
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'pt-BR';
       
+      const voices = window.speechSynthesis.getVoices();
+      // Look for natural sounding Google/Premium voices in PT-BR
+      const ptVoices = voices.filter(v => v.lang === 'pt-BR' || v.lang === 'pt_BR');
+      const premiumVoice = ptVoices.find(v => 
+        v.name.includes('Google') || 
+        v.name.includes('Luciana') || 
+        v.name.includes('Isabela') || 
+        v.name.includes('Premium') ||
+        v.name.includes('Natural')
+      );
+      
+      if (premiumVoice) {
+        utterance.voice = premiumVoice;
+      } else if (ptVoices.length > 0) {
+        utterance.voice = ptVoices[0];
+      }
+      
       const voiceTone = user?.preferences?.voiceTone || "Feminino Calmo";
-      let rate = 1.0;
-      let pitch = 1.1;
+      let rate = 1.05; // Slightly faster for AI feel
+      let pitch = 1.0;
 
       if (voiceTone === "Feminino Empático") {
-        rate = 0.95; pitch = 1.2;
+        rate = 1.0; pitch = 1.1;
       } else if (voiceTone === "Feminino Dinâmico") {
-        rate = 1.2; pitch = 1.2;
+        rate = 1.15; pitch = 1.15;
       } else if (voiceTone === "Feminino Suave") {
-        rate = 0.9; pitch = 1.1;
+        rate = 1.0; pitch = 1.05;
       } else if (voiceTone === "Masculino Calmo") {
-        rate = 0.95; pitch = 0.8;
+        rate = 1.0; pitch = 0.8;
       } else if (voiceTone === "Masculino Motivador") {
         rate = 1.15; pitch = 0.9;
       } else if (voiceTone === "Robótico") {
@@ -183,7 +207,18 @@ export function NutriliaAssistantWidget() {
       utterance.pitch = pitch;
       
       utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
+      utterance.onend = () => {
+          setIsSpeaking(false);
+          // If Jarvis mode is on, automatically keep listening for follow-ups
+          if (jarvisModeRef.current && !isListening) {
+             setTimeout(() => {
+                 if (recognitionRef.current) {
+                     setIsListening(true);
+                     try { recognitionRef.current.start(); } catch(e) {}
+                 }
+             }, 300);
+          }
+      };
       utterance.onerror = () => setIsSpeaking(false);
       
       utteranceRef.current = utterance;
@@ -191,7 +226,15 @@ export function NutriliaAssistantWidget() {
     }
   };
 
+  // Preload voices
   useEffect(() => {
+    if ('speechSynthesis' in window) {
+      // Chrome needs this to load voices sometimes
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+         window.speechSynthesis.getVoices();
+      };
+    }
     return () => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -274,31 +317,17 @@ export function NutriliaAssistantWidget() {
     } else {
         setInput("");
         
-        try {
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-               const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-               stream.getTracks().forEach(track => track.stop());
+        if (recognitionRef.current) {
+            setIsListening(true);
+            try {
+               recognitionRef.current.start();
+            } catch(e) {
+               console.warn("Microphone in use or error:", e);
+               setIsListening(false);
+               alert("Erro ao iniciar microfone. Verifique se outro aplicativo está usando-o.");
             }
-
-            if (recognitionRef.current) {
-                setIsListening(true);
-                try {
-                   recognitionRef.current.start();
-                } catch(e) {
-                   console.warn("Microphone in use:", e);
-                   setIsListening(false);
-                   alert("Erro ao iniciar microfone. Verifique se outro aplicativo está usando-o.");
-                }
-            } else {
-                alert("Seu navegador não suporta reconhecimento de voz nativo.");
-            }
-        } catch (err: any) {
-            console.warn("Microphone permission/device error:", err);
-            if (err.name === 'NotFoundError' || err.message?.includes('device not found')) {
-                alert("Nenhum microfone foi detectado. Por favor, conecte um microfone ou verifique suas configurações de hardware.");
-            } else {
-                alert("Permissão de microfone negada.");
-            }
+        } else {
+            alert("Seu navegador não suporta reconhecimento de voz nativo.");
         }
     }
   };

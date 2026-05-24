@@ -58,16 +58,61 @@ export default function PacienteProfilePage() {
     }
   }, [id]);
 
+  const handleExportPDF = () => {
+    window.print();
+  };
+
   if (!patient) {
     return <div className="p-12 text-center text-slate-500">Carregando paciente...</div>;
   }
 
   return (
+    <>
+      {/* Printable Report (hidden on screen, visible on print) */}
+      <div className="hidden print:block p-8 bg-white text-black min-h-screen">
+         <div className="border-b-2 border-emerald-600 pb-6 mb-6">
+            <h1 className="text-3xl font-bold font-display text-emerald-800">Relatório do Paciente - Nutrilia</h1>
+            <p className="text-sm text-slate-500 mt-1">Gerado pelo Nutricionista</p>
+         </div>
+         
+         <div className="flex gap-12 mb-8">
+            <div className="flex-1 space-y-2">
+                <h2 className="text-xl font-bold bg-slate-100 p-2 rounded">Dados Pessoais</h2>
+                <p><strong>Nome:</strong> {patient.name}</p>
+                <p><strong>Email:</strong> {patient.email}</p>
+                <p><strong>Telefone:</strong> {patient.phone}</p>
+            </div>
+            <div className="flex-1 space-y-2">
+                <h2 className="text-xl font-bold bg-slate-100 p-2 rounded">Métricas Atuais</h2>
+                <p><strong>Meta:</strong> {patient.goal}</p>
+                <p><strong>Peso:</strong> {patient.weight}</p>
+                <p><strong>Altura:</strong> {patient.height}</p>
+            </div>
+         </div>
+
+         <div className="space-y-4">
+             <h2 className="text-xl font-bold bg-slate-100 p-2 rounded">Último Plano Alimentar (Fase 2)</h2>
+             
+             <div className="p-4 border border-slate-300 rounded">
+                 <h3 className="font-bold border-b pb-2 mb-2">Café da Manhã (08:00)</h3>
+                 <p className="text-sm">Ovos mexidos com mamão e aveia.</p>
+             </div>
+             <div className="p-4 border border-slate-300 rounded">
+                 <h3 className="font-bold border-b pb-2 mb-2">Almoço (13:00)</h3>
+                 <p className="text-sm">Arroz integral, feijão, frango grelhado e salada.</p>
+             </div>
+             <div className="p-4 border border-slate-300 rounded">
+                 <h3 className="font-bold border-b pb-2 mb-2">Jantar (19:30)</h3>
+                 <p className="text-sm">Sopa de legumes com carne magra.</p>
+             </div>
+         </div>
+      </div>
+
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="max-w-5xl mx-auto space-y-6 pb-12"
+      className="max-w-5xl mx-auto space-y-6 pb-12 print:hidden"
     >
       <div className="flex items-center gap-4 mb-2">
         <Link href="/dashboard-nutricionista/pacientes">
@@ -168,9 +213,9 @@ export default function PacienteProfilePage() {
                                 <h4 className="font-semibold text-sm text-slate-900">Dieta Fase 2</h4>
                                 <p className="text-xs text-slate-500">Atualizada em {patient.lastVisit}</p>
                             </div>
-                            <Button variant="ghost" size="sm" className="h-8 gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100">
+                            <Button variant="ghost" size="sm" className="h-8 gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100" onClick={handleExportPDF}>
                                 <Download className="h-4 w-4" />
-                                <span className="hidden sm:inline">Baixar PDF</span>
+                                <span className="hidden sm:inline">Exportar PDF</span>
                             </Button>
                         </div>
                     </div>
@@ -179,5 +224,6 @@ export default function PacienteProfilePage() {
         </div>
       </div>
     </motion.div>
+    </>
   );
 }

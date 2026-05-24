@@ -68,6 +68,7 @@ export interface User {
   isGarminConnected?: boolean;
   mealReminders?: any[];
   waterReminders?: any;
+  hydrationSettings?: { enabled: boolean, interval: number, goal: number };
   recordedMeals?: string[];
   waterIntake?: number;
   activityMinutes?: number;

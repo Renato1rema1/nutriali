@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bell, BellOff, Clock, Save, AlertCircle } from "lucide-react";
+import { Bell, BellOff, Clock, Save, AlertCircle, Droplet } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 const DEFAULT_MEALS = [
@@ -19,16 +19,23 @@ const DEFAULT_MEALS = [
 export default function LembretesPage() {
   const { user, updateProfile } = useAuth();
   const [reminders, setReminders] = useState<any[]>([]);
+  const [hydrationEnabled, setHydrationEnabled] = useState(false);
+  const [hydrationInterval, setHydrationInterval] = useState("2");
+  const [hydrationGoal, setHydrationGoal] = useState("2500");
   const [isSaving, setIsSaving] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>("default");
 
   useEffect(() => {
     if (user) {
-      // If user has saved reminders, use them. Otherwise, use defaults.
       if (user.mealReminders && user.mealReminders.length > 0) {
         setReminders(user.mealReminders);
       } else {
         setReminders(DEFAULT_MEALS.map(m => ({ ...m, enabled: true })));
+      }
+      if (user.hydrationSettings) {
+        setHydrationEnabled(user.hydrationSettings.enabled);
+        setHydrationInterval(user.hydrationSettings.interval.toString());
+        setHydrationGoal(user.hydrationSettings.goal.toString());
       }
     }
   }, [user]);
@@ -60,11 +67,17 @@ export default function LembretesPage() {
 
   const handleSave = () => {
     setIsSaving(true);
-    updateProfile({ mealReminders: reminders });
+    updateProfile({ 
+      mealReminders: reminders,
+      hydrationSettings: {
+        enabled: hydrationEnabled,
+        interval: parseInt(hydrationInterval) || 2,
+        goal: parseInt(hydrationGoal) || 2000
+      }
+    });
     
     setTimeout(() => {
       setIsSaving(false);
-      // Optional: show a success toast or notification
       if (Notification.permission === "granted") {
         new Notification("Nutrilia", {
           body: "Configurações de lembretes salvas com sucesso!",
@@ -141,6 +154,72 @@ export default function LembretesPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="mt-8 pt-8 border-t border-slate-200">
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Lembrete de Hidratação</h2>
+        <p className="text-sm text-slate-500 mb-6">Mantenha-se hidratado configurando a sua meta diária e o intervalo de aviso.</p>
+        
+        <Card className={`transition-all ${hydrationEnabled ? 'border-sky-200 bg-sky-50/50' : 'opacity-80 bg-slate-50'}`}>
+           <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setHydrationEnabled(!hydrationEnabled)}
+                  className={`w-12 h-6 rounded-full relative transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 ${
+                    hydrationEnabled ? 'bg-sky-500' : 'bg-slate-300'
+                  }`}
+                  aria-label="Alternar lembrete de hidratação"
+                >
+                  <motion.div 
+                    animate={{ x: hydrationEnabled ? 24 : 2 }}
+                    className="absolute top-1 left-0 w-4 h-4 bg-white rounded-full shadow-sm"
+                  />
+                </button>
+                
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${hydrationEnabled ? 'bg-sky-100 text-sky-600' : 'bg-slate-200 text-slate-500'}`}>
+                    <Droplet className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-800">Beber Água</h3>
+                    <p className="text-xs text-slate-500">Notificações periódicas para se hidratar.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-500">Meta (ml)</label>
+                  <Input
+                    type="number"
+                    value={hydrationGoal}
+                    onChange={(e) => setHydrationGoal(e.target.value)}
+                    className="w-24 border-slate-200 focus:ring-sky-500"
+                    disabled={!hydrationEnabled}
+                    min="500"
+                    step="100"
+                    aria-label="Meta de hidratação em ml"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-500">Intervalo (horas)</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                        type="number"
+                        value={hydrationInterval}
+                        onChange={(e) => setHydrationInterval(e.target.value)}
+                        className="pl-9 w-32 border-slate-200 focus:ring-sky-500"
+                        disabled={!hydrationEnabled}
+                        min="1"
+                        max="24"
+                        aria-label="Intervalo de notificação em horas"
+                    />
+                  </div>
+                </div>
+              </div>
+           </CardContent>
+        </Card>
       </div>
 
       <div className="flex justify-end pt-4 bg-white/80 backdrop-blur-sm sticky bottom-0 pb-4">

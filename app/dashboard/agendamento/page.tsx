@@ -66,14 +66,14 @@ export default function AgendamentoIAPage() {
               {chat.length === 1 && (
                   <div className="flex justify-end">
                       <Button variant="outline" size="sm" onClick={handlePatientMessage}>
-                          "Quero agendar meu retorno"
+                          &quot;Quero agendar meu retorno&quot;
                       </Button>
                   </div>
               )}
               {chat.length === 3 && (
                   <div className="flex justify-end gap-2 flex-wrap">
                       <Button variant="outline" size="sm" onClick={handlePickTime}>
-                          "Quinta às 10:30"
+                          &quot;Quinta às 10:30&quot;
                       </Button>
                   </div>
               )}

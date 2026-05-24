@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Activity, Flame, Utensils, Droplet, NotebookPen } from "lucide-react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
@@ -206,7 +206,8 @@ export default function DashboardPage() {
                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                         cursor={{ fill: '#f1f5f9' }}
                       />
-                      <Bar dataKey="agua" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <ReferenceLine y={user?.hydrationSettings?.goal ? user.hydrationSettings.goal / 1000 : 2} stroke="#0ea5e9" strokeDasharray="3 3" label={{ position: 'top', value: 'Meta Diária', fill: '#0ea5e9', fontSize: 12 }} />
+                      <Bar dataKey="agua" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Ingestão (L)" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
